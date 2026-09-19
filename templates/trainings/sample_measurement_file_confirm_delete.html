@@ -1,0 +1,18 @@
+{% extends "base.html" %} {% block content %}
+<h1 class="text-2xl font-bold mb-4">Excluir arquivo?</h1>
+<p class="text-gray-600 mb-6">
+  Tem certeza que deseja excluir "{{ sample_file.file.name }}"? Isso também
+  remove as medições geradas por ele.
+</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">
+    Confirmar exclusão
+  </button>
+  <a
+    href="{% url 'sample_measurement_file_list' project.id experiment.id %}"
+    class="ml-2 text-gray-600"
+    >Cancelar</a
+  >
+</form>
+{% endblock %}

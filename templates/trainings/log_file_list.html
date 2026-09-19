@@ -1,0 +1,39 @@
+{% extends "base.html" %} {% block content %}
+<a
+  href="{% url 'experiment_detail' project.id experiment.id %}"
+  class="text-sm text-blue-600"
+  >&larr; {{ experiment.name }}</a
+>
+
+<div class="flex justify-between items-center mt-2 mb-6">
+  <h1 class="text-2xl font-bold">Arquivos de log</h1>
+  <a
+    href="{% url 'log_file_create' project.id experiment.id %}"
+    class="bg-blue-600 text-white px-4 py-2 rounded"
+    >Novo upload</a
+  >
+</div>
+
+<div class="grid gap-4">
+  {% for log_file in log_files %}
+  <div class="border rounded p-4 flex justify-between items-center">
+    <div>
+      <h2 class="font-semibold">{{ log_file.file.name }}</h2>
+      <p class="text-sm text-gray-500">
+        {{ log_file.file_type }} — status: {{ log_file.status }}
+      </p>
+      {% if log_file.error_message %}
+      <p class="text-sm text-red-600">{{ log_file.error_message }}</p>
+      {% endif %}
+    </div>
+    <a
+      href="{% url 'log_file_delete' project.id experiment.id log_file.id %}"
+      class="text-sm text-red-600"
+      >Excluir</a
+    >
+  </div>
+  {% empty %}
+  <p class="text-gray-500">Nenhum arquivo enviado ainda.</p>
+  {% endfor %}
+</div>
+{% endblock %}

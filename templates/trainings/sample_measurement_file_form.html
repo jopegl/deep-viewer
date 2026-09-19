@@ -1,0 +1,19 @@
+{% extends "base.html" %} {% block content %}
+<h1 class="text-2xl font-bold mb-6">
+  Novo upload predito vs. real — {{ experiment.name }}
+</h1>
+{% if not form.fields.measurement_type.queryset.exists %}
+<p class="text-sm text-red-600 mb-4">
+  Nenhuma medida cadastrada ainda.
+  <a href="{% url 'measurement_type_create' project.id %}" class="underline"
+    >Cadastre uma medida primeiro</a
+  >.
+</p>
+{% endif %}
+<form method="post" enctype="multipart/form-data" class="space-y-4 max-w-md">
+  {% csrf_token %} {{ form.as_p }}
+  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
+    Enviar
+  </button>
+</form>
+{% endblock %}

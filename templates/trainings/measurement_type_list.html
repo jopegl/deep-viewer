@@ -1,0 +1,34 @@
+{% extends "base.html" %} {% block content %}
+<a href="{% url 'project_detail' project.id %}" class="text-sm text-blue-600"
+  >&larr; {{ project.name }}</a
+>
+
+<div class="flex justify-between items-center mt-2 mb-6">
+  <h1 class="text-2xl font-bold">Medidas do projeto</h1>
+  <a
+    href="{% url 'measurement_type_create' project.id %}"
+    class="bg-blue-600 text-white px-4 py-2 rounded"
+    >Nova medida</a
+  >
+</div>
+
+<div class="grid gap-4">
+  {% for measurement_type in measurement_types %}
+  <div class="border rounded p-4 flex justify-between items-center">
+    <div>
+      <h2 class="font-semibold">{{ measurement_type.name }}</h2>
+      {% if measurement_type.unit %}
+      <p class="text-sm text-gray-500">Unidade: {{ measurement_type.unit }}</p>
+      {% endif %}
+    </div>
+    <a
+      href="{% url 'measurement_type_delete' project.id measurement_type.id %}"
+      class="text-sm text-red-600"
+      >Excluir</a
+    >
+  </div>
+  {% empty %}
+  <p class="text-gray-500">Nenhuma medida cadastrada ainda.</p>
+  {% endfor %}
+</div>
+{% endblock %}

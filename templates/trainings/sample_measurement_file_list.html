@@ -1,0 +1,39 @@
+{% extends "base.html" %} {% block content %}
+<a
+  href="{% url 'experiment_detail' project.id experiment.id %}"
+  class="text-sm text-blue-600"
+  >&larr; {{ experiment.name }}</a
+>
+
+<div class="flex justify-between items-center mt-2 mb-6">
+  <h1 class="text-2xl font-bold">Predito vs. real</h1>
+  <a
+    href="{% url 'sample_measurement_file_create' project.id experiment.id %}"
+    class="bg-blue-600 text-white px-4 py-2 rounded"
+    >Novo upload</a
+  >
+</div>
+
+<div class="grid gap-4">
+  {% for sample_file in sample_files %}
+  <div class="border rounded p-4 flex justify-between items-center">
+    <div>
+      <h2 class="font-semibold">{{ sample_file.measurement_type.name }}</h2>
+      <p class="text-sm text-gray-500">
+        {{ sample_file.file.name }} — status: {{ sample_file.status }}
+      </p>
+      {% if sample_file.error_message %}
+      <p class="text-sm text-red-600">{{ sample_file.error_message }}</p>
+      {% endif %}
+    </div>
+    <a
+      href="{% url 'sample_measurement_file_delete' project.id experiment.id sample_file.id %}"
+      class="text-sm text-red-600"
+      >Excluir</a
+    >
+  </div>
+  {% empty %}
+  <p class="text-gray-500">Nenhum arquivo enviado ainda.</p>
+  {% endfor %}
+</div>
+{% endblock %}
