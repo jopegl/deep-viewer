@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <title>Importar planilha</title>
+  </head>
+  <body>
+    <h1>Importar planilha</h1>
+    <p>Experimento: <strong>{{ experiment.name }}</strong></p>
+
+    {% for message in messages %}
+    <p class="{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+
+    <h2>Nomes de coluna esperados</h2>
+    <p>
+      <strong>Treino:</strong>
+      {% for col in train_columns %}<code>{{ col }}</code>{% if not forloop.last
+      %}, {% endif %}{% endfor %}, e métricas começando com
+      <code>train_</code> ou <code>val_</code> (ex.: <code>val_accuracy</code>).
+    </p>
+    <p>
+      <strong>Teste:</strong>
+      {% for col in test_columns %}<code>{{ col }}</code>{% if not forloop.last
+      %}, {% endif %}{% endfor %}
+    </p>
+    <p>
+      Se a sua planilha usar outros nomes, você vai poder dizer o que cada
+      coluna significa no próximo passo.
+    </p>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %} {{ form.as_p }}
+      <button type="submit">Importar</button>
+    </form>
+  </body>
+</html>

@@ -13,7 +13,7 @@ from experiments.services.parsing import (
     read_table,
 )
 
-BATCH_SIZE = 2000
+BATCH_SIZE = 2000 #quantas linhas vão em cada comando de gravação
 
 
 def _float_or_none(value):

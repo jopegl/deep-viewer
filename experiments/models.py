@@ -34,7 +34,7 @@ class Experiment(models.Model):
     notes = models.TextField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     task = models.CharField(max_length=15, choices=TaskType.choices)
-    step_unit = models.CharField(max_length=15, choices = StepUnit.choices)
+    step_unit = models.CharField(max_length=15, choices = StepUnit.choices, default=StepUnit.EPOCH)
 
     def __str__(self):
                 return f"{self.name} ({self.architecture})"
@@ -70,13 +70,13 @@ class StepMetric(models.Model):
 class ImportedFile(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name="files")
     kind = models.CharField(max_length=20, choices=ExperimentFileType.choices)
-    file = models.FileField()
+    file = models.FileField(default='')
     original_name = models.CharField(max_length=250)
     imported_at = models.DateTimeField(auto_now_add=True)
     column_mapping = models.JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.original_name} ({self.kind}), Path: {self.path}"
+        return f"{self.original_name} ({self.kind}), Path: {self.file}"
 
 
 class ClassificationPrediction(models.Model):

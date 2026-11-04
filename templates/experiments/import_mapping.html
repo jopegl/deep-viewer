@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <title>Escolher colunas</title>
+  </head>
+  <body>
+    <h1>Escolher colunas</h1>
+    <p>Experimento: <strong>{{ experiment.name }}</strong></p>
+
+    {% for message in messages %}
+    <p class="{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+
+    <p>
+      Não encontramos {% for col in missing %}<code>{{ col }}</code>{% if not
+      forloop.last %}, {% endif %}{% endfor %} no arquivo. Diga qual coluna
+      corresponde a cada campo:
+    </p>
+
+    <form method="post">
+      {% csrf_token %} {{ form.as_p }}
+      <button type="submit">Importar</button>
+      <a href="{% url 'experiment_import' experiment.pk %}">Cancelar</a>
+    </form>
+  </body>
+</html>
