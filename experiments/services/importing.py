@@ -1,6 +1,17 @@
 import pandas as pd
+from experiments.models import StepMetric, TrainingStep, ClassificationPrediction, RegressionPrediction, TaskType, ExperimentFileType, TaskType
 
-from experiments.models import StepMetric, TrainingStep, ClassificationPrediction, RegressionPrediction, TaskType
+from django.core.files.storage import default_storage
+from django.db import transaction
+
+from experiments.services.parsing import (
+    find_metric_columns,
+    match_test_columns,
+    match_train_columns,
+    prepare_test,
+    prepare_training,
+    read_table,
+)
 
 BATCH_SIZE = 2000
 
@@ -62,3 +73,52 @@ def save_test(experiment, predictions):
         ],
         batch_size=BATCH_SIZE,
     )
+
+def store_upload(experiment, uploaded_file):
+    return default_storage.save(f"imports/{experiment.pk}/{uploaded_file.name}", uploaded_file)
+
+
+def load_table(stored_path):
+    with default_storage.open(stored_path) as f:
+        return read_table(f)
+
+
+def run_import(experiment, kind, df, mapping):
+    if kind == ExperimentFileType.TRAIN:
+        metric_columns = find_metric_columns(df.columns, mapping)
+        steps, metrics = prepare_training(df, mapping, metric_columns)
+        with transaction.atomic():
+            save_training(experiment, steps, metrics)
+        return {"steps": len(steps), "metrics": len(metrics)}
+
+    predictions = prepare_test(df, mapping, is_regression=experiment.task == TaskType.REGR)
+    with transaction.atomic():
+        save_test(experiment, predictions)
+    return {"samples": len(predictions)}
+
+
+def start_import(experiment, kind, uploaded_file):
+    stored_path = store_upload(experiment, uploaded_file)
+    df = load_table(stored_path)
+
+    if kind == ExperimentFileType.TRAIN:
+        mapping, missing = match_train_columns(df.columns, experiment.step_unit)
+    else:
+        mapping, missing = match_test_columns(df.columns)
+
+    if missing:
+        return {
+            "imported": False,
+            "stored_path": stored_path,
+            "columns": list(df.columns),
+            "mapping": mapping,
+            "missing": missing,
+        }
+
+    summary = run_import(experiment, kind, df, mapping)
+    return {"imported": True, "stored_path": stored_path, "summary": summary}
+
+
+def finish_import(experiment, kind, stored_path, mapping):
+    df = load_table(stored_path)
+    return run_import(experiment, kind, df, mapping)
