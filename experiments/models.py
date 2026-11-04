@@ -70,8 +70,8 @@ class StepMetric(models.Model):
 class ImportedFile(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name="files")
     kind = models.CharField(max_length=20, choices=ExperimentFileType.choices)
-    path = models.FileField()
-    original_name = models.CharField(max_length=50)
+    file = models.FileField()
+    original_name = models.CharField(max_length=250)
     imported_at = models.DateTimeField(auto_now_add=True)
     column_mapping = models.JSONField(default=dict, blank=True, null=True)
 
@@ -81,7 +81,7 @@ class ImportedFile(models.Model):
 
 class ClassificationPrediction(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name="classi_preds")
-    sample_id = models.CharField(max_length=10)
+    sample_id = models.CharField(max_length=50)
     true_label = models.CharField(max_length=30)
     predicted_label = models.CharField(max_length=30)
 
