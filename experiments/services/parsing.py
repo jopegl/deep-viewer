@@ -2,7 +2,6 @@ import pandas as pd
 
 TRAIN_FIELDS = {
     "step": "Passo (época ou iteração)",
-    "epoch": "Época",
     "train_loss": "Loss de treino",
     "val_loss": "Loss de validação",
     "learning_rate": "Learning rate",
@@ -72,7 +71,7 @@ def find_metric_columns(columns, mapping):
  
 def prepare_training(df, mapping, metric_columns=()):
     steps = pd.DataFrame()
-    for field in ["step", "epoch", "train_loss", "val_loss", "learning_rate"]:
+    for field in ["step", "train_loss", "val_loss", "learning_rate"]:
         col = mapping.get(field)
         steps[field] = df[col] if col else None
  

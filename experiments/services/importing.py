@@ -32,7 +32,6 @@ def save_training(experiment, steps, metrics):
             TrainingStep(
                 experiment=experiment,
                 step=int(row.step),
-                epoch=_int_or_none(row.epoch),
                 train_loss=float(row.train_loss),
                 val_loss=_float_or_none(row.val_loss),
                 learning_rate=_float_or_none(row.learning_rate),
