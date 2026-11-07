@@ -2,15 +2,16 @@ from django.contrib import admin
 
 from .models import (
     ClassificationPrediction,
-    EpochMetric,
     Experiment,
     HistoryEntry,
     Hyperparameter,
     ImportedFile,
     Project,
     RegressionPrediction,
-    TrainingEpoch,
+    StepMetric,
+    TrainingStep,
 )
+
 
 class ExperimentInline(admin.TabularInline):
     model = Experiment
@@ -55,25 +56,25 @@ class HyperparameterAdmin(admin.ModelAdmin):
     search_fields = ("name", "experiment__name")
 
 
-class EpochMetricInline(admin.TabularInline):
-    model = EpochMetric
+class StepMetricInline(admin.TabularInline):
+    model = StepMetric
     extra = 0
 
 
-@admin.register(TrainingEpoch)
-class TrainingEpochAdmin(admin.ModelAdmin):
-    list_display = ("experiment", "epoch", "train_loss", "val_loss", "learning_rate")
+@admin.register(TrainingStep)
+class TrainingStepAdmin(admin.ModelAdmin):
+    list_display = ("experiment", "step", "train_loss", "val_loss", "learning_rate")
     list_filter = ("experiment",)
-    ordering = ("experiment", "epoch")
+    ordering = ("experiment", "step")
     list_select_related = ("experiment",)
-    inlines = [EpochMetricInline]
+    inlines = [StepMetricInline]
 
 
-@admin.register(EpochMetric)
-class EpochMetricAdmin(admin.ModelAdmin):
-    list_display = ("epoch", "metric", "split", "value")
-    list_filter = ("split", "metric", "epoch__experiment")
-    list_select_related = ("epoch__experiment",)
+@admin.register(StepMetric)
+class StepMetricAdmin(admin.ModelAdmin):
+    list_display = ("step", "metric", "split", "value")
+    list_filter = ("split", "metric", "step__experiment")
+    list_select_related = ("step__experiment",)
 
 
 @admin.register(ImportedFile)
@@ -82,7 +83,6 @@ class ImportedFileAdmin(admin.ModelAdmin):
     list_filter = ("kind",)
     search_fields = ("original_name", "experiment__name")
     readonly_fields = ("imported_at",)
-
 
 
 @admin.register(ClassificationPrediction)

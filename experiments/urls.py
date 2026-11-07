@@ -1,22 +1,8 @@
-from django.urls import path, include
-from .views import project_views
+from django.urls import path
 
+from . import views
 
-
-urlpatterns = [ 
-    
-    path('projects/', 
-         project_views.ProjectListView.as_view(), 
-         name= "project_list"
-         ),
-
-    path('projects/create/', 
-         project_views.ProjectCreateView.as_view(), 
-         name="project_create"),
-
-    path('projects/<int:pk>/delete/', 
-         project_views.ProjectDeleteView.as_view(), 
-         name="project_delete")
-
+urlpatterns = [
+    path("experiments/<int:pk>/import/", views.import_upload, name="experiment_import"),
+    path("experiments/<int:pk>/import/columns/", views.import_mapping, name="experiment_import_mapping"),
 ]
-
