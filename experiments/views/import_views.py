@@ -2,10 +2,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ColumnMappingForm, UploadForm
-from .models import Experiment, ExperimentFileType
-from .services.importing import finish_import, start_import
-from .services.parsing import (
+from ..forms.import_forms import ColumnMappingForm, UploadForm
+from ..models import Experiment, ExperimentFileType
+from ..services.importing import finish_import, start_import
+from ..services.parsing import (
     TEST_FIELDS,
     TRAIN_FIELDS,
     TRAIN_OPTIONAL,

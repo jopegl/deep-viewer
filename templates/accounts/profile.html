@@ -3,7 +3,7 @@
   {% csrf_token %} {{ form.as_p }}
   <button type="submit">Salvar</button>
 </form>
-
+  <a href="{% url 'project_list' %}" class="btn-projects">Meus Projetos</a>
 <form method="post" action="{% url 'logout' %}">
   {% csrf_token %}
   <button type="submit">Sair</button>

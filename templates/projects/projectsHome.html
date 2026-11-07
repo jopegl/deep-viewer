@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Lista de Projetos</h1>
+
+    <!-- Botão para criar novo projeto -->
+    <a href="{% url 'project_create' %}">Criar Novo Projeto</a>
+
+    <hr>
+
+    <ul>
+        {% for project in projects %}
+            <li>
+                <strong>{{ project.name }}</strong> - {{ project.description }}
+                
+                <!-- Link dinâmico para os experimentos deste projeto específico -->
+                <a href="{% url 'experiment_list' project.pk %}">[ Ver Experimentos ]</a>
+                <a href="{% url 'project_update' project.pk %}">[ Editar ]</a>
+                <a href="{% url 'project_delete' project.pk %}">[ Apagar ]</a>
+            </li>
+        {% empty %}
+            <p>Ainda não tens nenhum projeto registado.</p>
+        {% endfor %}
+    </ul>
+</body>
+</html>

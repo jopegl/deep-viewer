@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import ExperimentFileType
+from ..models import ExperimentFileType
 
 
 class UploadForm(forms.Form):
