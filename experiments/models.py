@@ -15,14 +15,14 @@ class ExperimentFileType(models.TextChoices):
     TEST = "test"
 
 class StepUnit(models.TextChoices):
-       EPOCH = 'epoch'
-       ITER = 'iter'
+    EPOCH = 'epoch'
+    ITER = 'iter'
 
 class Project(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(max_length=200)
     analyst = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
                 return self.name

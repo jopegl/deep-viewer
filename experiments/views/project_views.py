@@ -12,6 +12,9 @@ class ProjectListView(ListView):
     template_name = "projects/projectsHome.html"
     context_object_name = "projects"
 
+    def get_queryset(self):
+      return Project.objects.filter(analyst=self.request.user)
+
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     model = Project

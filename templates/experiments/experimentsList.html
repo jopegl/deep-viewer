@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Experimentos do Projeto {{project.name}}</h1>
+
+    <!-- Botão/Link para criar um novo experimento associado a este projeto -->
+    <a href="{% url 'experiment_create' project.pk %}">Criar Novo Experimento</a>
+
+    <hr>
+
+    <ul>
+        {% for experiment in experiment_list %}
+            <li>{{ experiment.name }}</li>
+        {% empty %}
+            <p>Nenhum experimento registado para este projeto.</p>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'project_list' %}">Return</a>
+</body>
+</html>
