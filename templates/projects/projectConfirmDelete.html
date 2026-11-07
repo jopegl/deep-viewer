@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Confirmar Exclusão</h1>
+
+    <p>Tens a certeza de que desejas apagar o projeto <strong>"{{ project.name }}"</strong>?</p>
+    <p><em>Atenção: Esta ação é irreversível e excluirá todos os experimentos associados a este projeto.</em></p>
+
+    <!-- O Django DeleteView exige um formulário com método POST para efetivar a remoção -->
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Sim, Apagar</button>
+        <a href="{% url 'project_list' %}">Cancelar</a>
+    </form>
+</body>
+</html>
