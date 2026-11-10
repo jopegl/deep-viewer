@@ -22,7 +22,7 @@ Developed for the **DCC061 – Software Engineering** course.
 - Automatic column recognition when the spreadsheet follows the naming convention
 - Column mapping screen when the spreadsheet uses different names
 - **Multi-output networks**: one test spreadsheet can hold several outputs (e.g. a disease class and an age), each with its own task and metrics
-- Automatic detection of each output's task (classification or regression)
+- Confirmation screen for the task of each output (classification or regression), with a suggestion detected from the values
 - Re-import: uploading a spreadsheet again replaces the previous data
 - Experiment dashboard:
   - training vs. validation curves for the loss and for every metric
@@ -33,7 +33,6 @@ Developed for the **DCC061 – Software Engineering** course.
 
 **Planned**
 
-- Confirmation screen for the task of each output, with the detected task as the suggested value
 - Experiment ranking and comparison screen
 - Detailed validation of the training spreadsheet, reporting the row of each error
 - Support for decimal commas (spreadsheets exported by Excel in Portuguese)
@@ -105,8 +104,9 @@ Then open http://127.0.0.1:8000/ in your browser. Admin users can reach the admi
 2. Create a **project**.
 3. Inside the project, create an **experiment**, choosing its step unit (epoch or iteration).
 4. Click **Importar planilhas**, choose the spreadsheet type (train or test), select the file and click **Importar**.
-5. If the column names follow the convention below, the data is imported right away. Otherwise, the system asks you to indicate what each column means.
-6. Click **Ver dashboard** to see the curves and metrics. For multi-output experiments, use the **Saída** selector to switch between outputs.
+5. If the column names follow the convention below, the system recognizes them on its own. Otherwise, it asks you to indicate what each column means.
+6. For **test** spreadsheets, a confirmation screen lists each output with a suggested task (classification or regression) and a few example values. Check the suggestion, change it if needed and click **Importar**. Training spreadsheets skip this step.
+7. Click **Ver dashboard** to see the curves and metrics. For multi-output experiments, use the **Saída** selector to switch between outputs.
 
 ---
 
@@ -212,35 +212,36 @@ img_0002.png,healthy,spot,52.0,49.8
 img_0003.png,spot,spot,18.0,22.1
 ```
 
-This spreadsheet creates two outputs, `disease` and `age`, each with three predictions. A cell may be left empty when a sample has no label for one of the outputs: that row is skipped for that output only.
+This spreadsheet creates two outputs, `disease` and `age`, each with three predictions. A cell may be left empty when a sample has no label for one of the outputs: that row is skipped for that output only. An output whose columns are empty on every row is ignored.
 
 The multi-output format is used whenever the spreadsheet has at least one `true_<output>` / `pred_<output>` pair. Do not mix it with `true_label` / `predicted_label` in the same file: in that case, the `true_label` columns are ignored.
 
-**How the task of each output is detected**
+**Choosing the task of each output**
 
-There is no task to choose when creating the experiment. The task of each output is detected from its values (true and predicted together):
+There is no task to choose when creating the experiment. After a test spreadsheet is uploaded, a confirmation screen shows each output with a **suggested task** and up to five example values. The suggestion is computed from the values (true and predicted together):
 
-1. If there is any **text**, it is **classification**.
-2. If there are only **integers** with **at most 20 distinct values**, it is **classification** (e.g. class ids `0` to `9`).
-3. Otherwise, it is **regression**.
+1. If there is any **text**, it suggests **classification**.
+2. If there are only **integers** with **at most 20 distinct values**, it suggests **classification** (e.g. class ids `0` to `9`).
+3. Otherwise, it suggests **regression**.
 
-The detection fails in a few known cases. Until the confirmation screen is implemented (see [Planned](#features)), avoid them:
+The suggestion is right in most cases, but it should be changed on the confirmation screen in these:
 
-| Case                                                                              | Detected as    | How to avoid it                                                                                  |
-| --------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------ |
-| Classification with more than 20 numeric class ids (e.g. CIFAR-100)               | Regression     | Export the class names instead of the ids                                                        |
-| Binary classification with the predicted **probability** (`0.87`)                 | Regression     | Export the predicted class (`0` or `1`), not the probability                                     |
-| Regression with integer targets and few distinct values (e.g. ages from 18 to 32) | Classification | Cannot be avoided yet: `34.0` also counts as an integer. This case needs the confirmation screen |
-| Regression with text in a cell (`n/a`)                                            | Classification | Remove the text or leave the cell empty                                                          |
+| Case                                                                              | Suggested      | Choose                                          |
+| --------------------------------------------------------------------------------- | -------------- | ----------------------------------------------- |
+| Classification with more than 20 numeric class ids (e.g. CIFAR-100)               | Regression     | Classification                                  |
+| Regression with integer targets and few distinct values (e.g. ages from 18 to 32) | Classification | Regression                                      |
+| Regression with text in a cell (`n/a`)                                            | Classification | Regression, after removing the text (see below) |
+
+For binary classification, export the predicted **class** (`0` or `1`), not the predicted probability (`0.87`): a probability is not a class, whatever task is chosen.
 
 **Classification rules**
 
 - Labels can be text (`cat`) or numbers (`0`, `1`, `2`).
-- Labels are compared exactly, so the spelling must be identical in both columns: `cat`, `Cat` and `cat ` (with a trailing space) are three different classes.
+- Labels are compared exactly, so the spelling must be identical in both columns: `cat`, `Cat` and `cat ` (with a trailing space) are three different classes. Spaces at the start and end of a label are removed.
 
 **Regression rules**
 
-- True and predicted values must be numbers.
+- True and predicted values must be numbers. If an output marked as regression has text in any cell, the import is rejected and the message lists the rows with problems. Fix them and upload the file again.
 - Samples whose true value is `0` are left out of the MRE (relative error), since the error cannot be divided by zero. The other metrics use all samples.
 
 ### Checklist before importing
@@ -253,6 +254,7 @@ The detection fails in a few known cases. Until the confirmation screen is imple
 - [ ] In multi-output test spreadsheets, every `true_<output>` has a `pred_<output>` with the same name.
 - [ ] Classification outputs contain classes, not probabilities.
 - [ ] In classification, class names are spelled the same way in both columns.
+- [ ] On the confirmation screen, the task of each output is the right one.
 
 ### Common problems
 
@@ -262,7 +264,8 @@ The detection fails in a few known cases. Until the confirmation screen is imple
 | The import fails on a training spreadsheet                                         | Decimal commas or text in numeric columns                                       | Export the file with dots as decimal separator and remove the text    |
 | A metric appears twice on the dashboard                                            | Different names after `train_` and `val_`                                       | Use the same name, e.g. `train_f1` and `val_f1`                       |
 | The confusion matrix has unexpected classes                                        | Different spellings of the same class                                           | Standardize the class names                                           |
-| A regression output shows a confusion matrix, or a classification output shows MAE | The task was detected wrongly                                                   | See the table of known detection failures above                       |
+| A regression output shows a confusion matrix, or a classification output shows MAE | The wrong task was confirmed on the confirmation screen                         | Import the spreadsheet again and choose the right task                |
+| "A saída '…' foi marcada como regressão, mas … tem valores que não são números"    | An output marked as regression has text in some cells                           | Fix the listed rows, or choose classification if that is the task     |
 | An output is missing from the selector                                             | Its `true_` and `pred_` columns have different names, or one of them is missing | Use `true_<output>` and `pred_<output>` with the same name            |
 | "A planilha precisa da coluna sample_id."                                          | Multi-output spreadsheet without a `sample_id` column                           | Rename the identifier column to `sample_id`                           |
 
@@ -278,13 +281,13 @@ deep-viewer/
 │       └── institutions.py      # institution search (ROR API)
 ├── experiments/                 # projects, experiments and spreadsheet import
 │   ├── models.py                # database entities
-│   ├── forms/                   # project, experiment, upload and column mapping forms
-│   ├── views/                   # project, experiment and import screens
+│   ├── forms/                   # project, experiment, upload, column mapping and output task forms
+│   ├── views/                   # project, experiment and import screens (upload, columns, confirmation)
 │   ├── urls.py
 │   ├── admin.py
 │   └── services/
 │       ├── exceptions.py        # ImportValidationError
-│       ├── parsing.py           # spreadsheet reading, column recognition and task detection
+│       ├── parsing.py           # spreadsheet reading, column recognition and task suggestion
 │       └── importing.py         # saving the data to the database
 ├── analyses/                    # dashboard: metrics and charts
 │   ├── services/
@@ -302,9 +305,22 @@ deep-viewer/
 
 The business logic is kept separate from the views, in each app's `services/` folder:
 
-- `parsing.py` uses pandas: it reads the file, checks the column names and the values, finds the outputs of the test spreadsheet, detects the task of each one and splits the data into the parts that go into each table. Problems found in the spreadsheet raise `ImportValidationError`, whose messages are shown on the form;
-- `importing.py` saves that data to the database inside a transaction (either everything is saved, or nothing is). Both test formats are saved by the same function, `save_outputs`;
+- `parsing.py` uses pandas and never touches the database: it reads the file, checks the column names and the values, finds the outputs of the test spreadsheet, suggests the task of each one and splits the data into the parts that go into each table. The single-output format is converted into the multi-output one (`true_principal` / `pred_principal`) right after the columns are known, so the rest of the code handles a single format. Problems found in the spreadsheet raise `ImportValidationError`, whose messages are shown on the form;
+- `importing.py` coordinates the import and saves the data to the database inside a transaction (either everything is saved, or nothing is). Every step returns the next one (`mapping`, `tasks` or `done`), and the views only follow it;
 - `metrics.py` computes the metrics of one output by hand; the tests compare the results with scikit-learn.
+
+### Import flow
+
+```
+upload ─→ columns recognized? ── no ─→ column mapping screen ─┐
+               │                                              │
+              yes ←───────────────────────────────────────────┘
+               │
+       training spreadsheet ─→ saved
+       test spreadsheet ─────→ task confirmation screen ─→ saved ─→ dashboard
+```
+
+Between screens, the uploaded file is kept on disk and the pending import is kept in the user's session.
 
 ### Data model
 
