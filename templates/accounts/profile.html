@@ -1,10 +1,22 @@
-<h1>Meu perfil</h1>
-<form method="post">
-  {% csrf_token %} {{ form.as_p }}
-  <button type="submit">Salvar</button>
-</form>
-  <a href="{% url 'project_list' %}" class="btn-projects">Meus Projetos</a>
-<form method="post" action="{% url 'logout' %}">
-  {% csrf_token %}
-  <button type="submit">Sair</button>
-</form>
+{% extends "base.html" %}
+
+{% block title %}Meu perfil | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>Meu perfil</h1>
+      <p class="lead">Conectado como {{ user.username }}.</p>
+    </div>
+  </div>
+
+  <form method="post" class="form form-card">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Salvar alterações</button>
+      <a class="btn btn-ghost" href="{% url 'project_list' %}">Meus projetos</a>
+    </div>
+  </form>
+{% endblock %}

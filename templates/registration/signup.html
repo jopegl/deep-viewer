@@ -1,5 +1,24 @@
-<h1>Criar conta</h1>
-<form method="post">
-  {% csrf_token %} {{ form.as_p }}
-  <button type="submit">Cadastrar</button>
-</form>
+{% extends "base.html" %}
+
+{% block title %}Criar conta | Deep Viewer{% endblock %}
+{% block body_class %}auth{% endblock %}
+
+{% block content %}
+  <div class="auth-box">
+    <span class="brand">
+      {% include "partials/logo.html" %}
+      Deep Viewer
+    </span>
+
+    <h1>Criar conta</h1>
+    <p class="lead">Leva menos de um minuto.</p>
+
+    <form method="post" class="form form-card">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary btn-block">Criar conta</button>
+    </form>
+
+    <p class="auth-switch">Já tem conta? <a href="{% url 'login' %}">Entrar</a></p>
+  </div>
+{% endblock %}

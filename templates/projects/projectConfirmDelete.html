@@ -1,21 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>Confirmar Exclusão</h1>
+{% extends "base.html" %}
 
-    <p>Tens a certeza de que desejas apagar o projeto <strong>"{{ project.name }}"</strong>?</p>
-    <p><em>Atenção: Esta ação é irreversível e excluirá todos os experimentos associados a este projeto.</em></p>
+{% block title %}Apagar projeto | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
 
-    <!-- O Django DeleteView exige um formulário com método POST para efetivar a remoção -->
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit">Sim, Apagar</button>
-        <a href="{% url 'project_list' %}">Cancelar</a>
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <span>{{ project.name }}</span>
+  </nav>
+
+  <div class="form-card danger-card">
+    <h1>Apagar "{{ project.name }}"?</h1>
+    <p class="lead">
+      {% with total=project.experiments.count %}
+        Os {{ total }} experimento{{ total|pluralize }} deste projeto e todos os dados importados
+        serão apagados junto. Não é possível desfazer.
+      {% endwith %}
+    </p>
+
+    <form method="post" class="form-actions section">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Apagar projeto</button>
+      <a class="btn btn-ghost" href="{% url 'project_list' %}">Cancelar</a>
     </form>
-</body>
-</html>
+  </div>
+{% endblock %}

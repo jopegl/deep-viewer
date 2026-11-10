@@ -1,41 +1,47 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <title>Importar planilha</title>
-</head>
-<body>
-  <h1>Importar planilha</h1>
-  <p>Experimento: <strong>{{ experiment.name }}</strong></p>
+{% extends "base.html" %}
 
-  {% for message in messages %}
-    <p class="{{ message.tags }}">{{ message }}</p>
-  {% endfor %}
+{% block title %}Importar planilha | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
 
-  <h2>Nomes de coluna esperados</h2>
-  <p>
-    <strong>Treino:</strong>
-    {% for col in train_columns %}
-      <code>{{ col }}</code>{% if not forloop.last %},{% endif %}
-    {% endfor %}
-    e métricas começando com <code>train_</code> ou <code>val_</code>
-    (ex.: <code>val_accuracy</code>).
-  </p>
-  <p>
-    <strong>Teste:</strong>
-    {% for col in test_columns %}
-      <code>{{ col }}</code>{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  </p>
-  <p>
-    Se a sua planilha usar outros nomes, você vai poder dizer o que cada
-    coluna significa no próximo passo.
-  </p>
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <a href="{% url 'experiment_list' experiment.project.pk %}">{{ experiment.project.name }}</a>
+    <span>/</span>
+    <a href="{% url 'experiment_results' experiment.pk %}">{{ experiment.name }}</a>
+  </nav>
 
-  <form method="post" enctype="multipart/form-data">
+  <div class="page-head">
+    <div>
+      <h1>Importar planilha</h1>
+      <p class="lead">CSV ou Excel exportado do seu código de treino.</p>
+    </div>
+  </div>
+
+  <div class="hint-box">
+    <p>
+      <strong>Treino:</strong>
+      {% for col in train_columns %}
+        <code>{{ col }}</code>{% if not forloop.last %},{% endif %}
+      {% endfor %}
+      e métricas começando com <code>train_</code> ou <code>val_</code>.
+    </p>
+    <p>
+      <strong>Teste:</strong>
+      {% for col in test_columns %}
+        <code>{{ col }}</code>{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    </p>
+    <p>Usa outros nomes? Sem problema: no próximo passo você indica o que cada coluna significa.</p>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="form form-card">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Importar</button>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Importar</button>
+      <a class="btn btn-ghost" href="{% url 'experiment_results' experiment.pk %}">Ver dashboard</a>
+    </div>
   </form>
-</body>
-</html>
+{% endblock %}

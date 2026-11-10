@@ -1,6 +1,24 @@
-<h1>Entrar</h1>
-<form method="post">
-  {% csrf_token %} {{ form.as_p }}
-  <button type="submit">Entrar</button>
-</form>
-<a href="{% url 'signup' %}">Criar conta</a>
+{% extends "base.html" %}
+
+{% block title %}Entrar | Deep Viewer{% endblock %}
+{% block body_class %}auth{% endblock %}
+
+{% block content %}
+  <div class="auth-box">
+    <span class="brand">
+      {% include "partials/logo.html" %}
+      Deep Viewer
+    </span>
+
+    <h1>Entrar</h1>
+    <p class="lead">Acompanhe e compare os treinos dos seus modelos.</p>
+
+    <form method="post" class="form form-card">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+    </form>
+
+    <p class="auth-switch">Ainda não tem conta? <a href="{% url 'signup' %}">Criar conta</a></p>
+  </div>
+{% endblock %}

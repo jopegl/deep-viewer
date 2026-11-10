@@ -1,29 +1,89 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Experimentos</title>
-</head>
-<body>
-    <h1>Experimentos do Projeto {{ project.name }}</h1>
+{% extends "base.html" %}
+{% load dashboard_tags %}
 
-    <a href="{% url 'experiment_create' project.pk %}">Criar Novo Experimento</a>
+{% block title %}{{ project.name }} | Deep Viewer{% endblock %}
 
-    <hr>
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <span>{{ project.name }}</span>
+  </nav>
 
-    <ul>
-        {% for experiment in experiment_list %}
-            <li>
-                {{ experiment.name }}
-                | <a href="{% url 'experiment_results' experiment.pk %}">Dashboard</a>
-                | <a href="{% url 'experiment_import' experiment.pk %}">Importar planilhas</a>
-            </li>
-        {% empty %}
-            <li>Nenhum experimento registrado para este projeto.</li>
-        {% endfor %}
-    </ul>
+  <div class="page-head">
+    <div>
+      <h1>{{ project.name }}</h1>
+      {% if project.description %}
+        <p class="lead">{{ project.description }}</p>
+      {% endif %}
+    </div>
+    <a class="btn btn-primary" href="{% url 'experiment_create' project.pk %}">Novo experimento</a>
+  </div>
 
-    <a href="{% url 'project_list' %}">Voltar</a>
-</body>
-</html>
+  {% if experiment_list %}
+    <div class="exp-grid">
+      {% for experiment in experiment_list %}
+        <article class="exp-card">
+          {% loss_sparkline experiment as spark %}
+          {% if spark %}
+            <a class="exp-curve" href="{% url 'experiment_results' experiment.pk %}"
+               aria-label="Abrir o dashboard de {{ experiment.name }}">
+              <span class="exp-curve-legend">
+                <span>treino</span>
+                <span class="legend-val">validação</span>
+              </span>
+              {{ spark }}
+            </a>
+          {% else %}
+            <a class="exp-curve" href="{% url 'experiment_import' experiment.pk %}">
+              <span class="exp-curve-empty">Importe a planilha de treino</span>
+            </a>
+          {% endif %}
+
+          <div class="exp-body">
+            <h2 class="exp-name">
+              <a href="{% url 'experiment_results' experiment.pk %}">{{ experiment.name }}</a>
+            </h2>
+            <p class="exp-arch">{{ experiment.architecture|default:"Arquitetura não informada" }}</p>
+            <div class="tags">
+              <span class="tag tag-task">{{ experiment.get_task_display }}</span>
+              <span class="tag">Por {{ experiment.get_step_unit_display|lower }}</span>
+            </div>
+          </div>
+
+          <dl class="exp-stats">
+            <div>
+              <dt>Passos de treino</dt>
+              <dd>{{ experiment.steps.count }}</dd>
+            </div>
+            <div>
+              <dt>Amostras de teste</dt>
+              {% if experiment.task == "Regression" %}
+                <dd>{{ experiment.regr_preds.count }}</dd>
+              {% else %}
+                <dd>{{ experiment.classi_preds.count }}</dd>
+              {% endif %}
+            </div>
+          </dl>
+
+          <div class="exp-actions">
+            <a class="btn btn-primary btn-sm" href="{% url 'experiment_results' experiment.pk %}">
+              Ver dashboard
+            </a>
+            <a class="btn btn-ghost btn-sm" href="{% url 'experiment_import' experiment.pk %}">
+              Importar planilhas
+            </a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <h2>Nenhum experimento neste projeto</h2>
+      <p>Crie um experimento para cada treino e depois importe as planilhas de treino e de teste.</p>
+      <a class="btn btn-primary" href="{% url 'experiment_create' project.pk %}">Criar o primeiro experimento</a>
+    </div>
+  {% endif %}
+
+  <p class="section"><a href="{% url 'project_list' %}">Voltar para os projetos</a></p>
+{% endblock %}

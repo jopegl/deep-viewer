@@ -1,103 +1,233 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <title>Resultados</title>
-</head>
-<body>
-  <h1>{{ experiment.name }}</h1>
-  <p>
-    {{ experiment.get_task_display }}
-    | <a href="{% url 'experiment_import' experiment.pk %}">Importar planilhas</a>
-  </p>
+{% extends "base.html" %}
 
-  <h2>Treino</h2>
-  {% if training_chart %}
-    <form method="get">
-      <label for="metric">Métrica:</label>
-      <select name="metric" id="metric" onchange="this.form.submit()">
-        {% for name in metric_names %}
-          {% if name == selected_metric %}
-            <option value="{{ name }}" selected>{{ name }}</option>
-          {% else %}
-            <option value="{{ name }}">{{ name }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-    </form>
-    {{ training_chart|safe }}
-  {% else %}
-    <p>Nenhuma planilha de treino importada.</p>
-  {% endif %}
+{% block title %}{{ experiment.name }} | Deep Viewer{% endblock %}
 
-  <h2>Teste</h2>
-  {% if test_metrics %}
-    <p>{{ test_metrics.n_samples }} amostras</p>
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <a href="{% url 'experiment_list' experiment.project.pk %}">{{ experiment.project.name }}</a>
+    <span>/</span>
+    <span>{{ experiment.name }}</span>
+  </nav>
 
-    {% if is_regression %}
-      <table border="1">
-        <tr><th>MAE</th><th>RMSE</th><th>R²</th><th>MRE</th></tr>
-        <tr>
-          <td>{{ test_metrics.mae|floatformat:4 }}</td>
-          <td>{{ test_metrics.rmse|floatformat:4 }}</td>
-          <td>{{ test_metrics.r2|floatformat:4 }}</td>
-          <td>
-            {% if test_metrics.mre is not None %}
-              {{ test_metrics.mre|floatformat:4 }}
+  <div class="page-head">
+    <div>
+      <h1>{{ experiment.name }}</h1>
+      <div class="tags">
+        <span class="tag tag-task">{{ experiment.get_task_display }}</span>
+        <span class="tag">Por {{ experiment.get_step_unit_display|lower }}</span>
+        {% if experiment.architecture %}
+          <span class="tag">{{ experiment.architecture }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'experiment_import' experiment.pk %}">Importar planilhas</a>
+  </div>
+
+  <section class="section">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Treino</h2>
+          <p>Evolução no conjunto de treino e no de validação.</p>
+        </div>
+        {% if training_chart %}
+          <form method="get" class="inline-form">
+            <label for="metric">Métrica</label>
+            <select class="select" name="metric" id="metric" onchange="this.form.submit()">
+              {% for name in metric_names %}
+                {% if name == selected_metric %}
+                  <option value="{{ name }}" selected>{{ name }}</option>
+                {% else %}
+                  <option value="{{ name }}">{{ name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            <noscript><button type="submit" class="btn btn-ghost btn-sm">Mostrar</button></noscript>
+          </form>
+        {% endif %}
+      </div>
+
+      {% if training_chart %}
+        <div class="chart">{{ training_chart|safe }}</div>
+      {% else %}
+        <div class="empty">
+          <h3>Nenhuma planilha de treino importada</h3>
+          <p>Importe o log do treino para ver as curvas de loss e das métricas.</p>
+          <a class="btn btn-primary" href="{% url 'experiment_import' experiment.pk %}">Importar planilha</a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <h2>Teste</h2>
+        {% if test_metrics %}
+          <p>Calculado sobre {{ test_metrics.n_samples }} amostras do conjunto de teste.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if test_metrics %}
+      {% if is_regression %}
+        <div class="kpis">
+          <div class="kpi kpi-main">
+            <div class="kpi-label">MAE</div>
+            <div class="kpi-value">{{ test_metrics.mae|floatformat:4 }}</div>
+            <div class="kpi-hint">Erro absoluto médio</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">RMSE</div>
+            <div class="kpi-value">{{ test_metrics.rmse|floatformat:4 }}</div>
+            <div class="kpi-hint">Pesa mais os erros grandes</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">R²</div>
+            <div class="kpi-value">{{ test_metrics.r2|floatformat:4 }}</div>
+            <div class="kpi-hint">1 é o ajuste perfeito</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">MRE</div>
+            <div class="kpi-value">
+              {% if test_metrics.mre is not None %}
+                {{ test_metrics.mre|floatformat:4 }}
+              {% else %}
+                -
+              {% endif %}
+            </div>
+            <div class="kpi-hint">Erro relativo ao valor real</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="kpis">
+          <div class="kpi kpi-main">
+            <div class="kpi-label">Acurácia</div>
+            <div class="kpi-value">{{ test_metrics.accuracy|floatformat:4 }}</div>
+            <div class="kpi-hint">Acertos sobre o total</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Precisão</div>
+            <div class="kpi-value">{{ test_metrics.precision|floatformat:4 }}</div>
+            <div class="kpi-hint">Média entre as classes</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Recall</div>
+            <div class="kpi-value">{{ test_metrics.recall|floatformat:4 }}</div>
+            <div class="kpi-hint">Média entre as classes</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">F1</div>
+            <div class="kpi-value">{{ test_metrics.f1|floatformat:4 }}</div>
+            <div class="kpi-hint">Média entre as classes</div>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head">
+            {% if is_regression %}
+              <h3>Real x predito</h3>
             {% else %}
-              -
+              <h3>Matriz de confusão</h3>
             {% endif %}
-          </td>
-        </tr>
-      </table>
+          </div>
+          {% if is_regression %}
+            <div class="chart">{{ test_chart|safe }}</div>
+          {% else %}
+            <div class="chart chart-fade">{{ test_chart|safe }}</div>
+          {% endif %}
+        </div>
+
+        <div class="panel">
+          {% if is_regression %}
+            <div class="panel-head">
+              <h3>Maiores erros</h3>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Amostra</th>
+                  <th class="num">Real</th>
+                  <th class="num">Predito</th>
+                  <th class="num">Erro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in worst_errors %}
+                  <tr>
+                    <td>{{ e.sample_id }}</td>
+                    <td class="num">{{ e.true_label|floatformat:2 }}</td>
+                    <td class="num">{{ e.predicted_label|floatformat:2 }}</td>
+                    <td class="num table-error">{{ e.error|floatformat:2 }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="panel-head">
+              <h3>Por classe</h3>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Classe</th>
+                  <th class="num">Precisão</th>
+                  <th class="num">Recall</th>
+                  <th class="num">F1</th>
+                  <th class="num">Amostras</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in test_metrics.per_class %}
+                  <tr>
+                    <td class="strong">{{ c.label }}</td>
+                    <td class="num">{{ c.precision|floatformat:3 }}</td>
+                    <td class="num">{{ c.recall|floatformat:3 }}</td>
+                    <td class="num">{{ c.f1|floatformat:3 }}</td>
+                    <td class="num">{{ c.support }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if not is_regression and worst_errors %}
+        <div class="panel section">
+          <div class="panel-head">
+            <h3>Amostras classificadas errado</h3>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Amostra</th>
+                <th>Classe real</th>
+                <th>Classe predita</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in worst_errors %}
+                <tr>
+                  <td>{{ e.sample_id }}</td>
+                  <td>{{ e.true_label }}</td>
+                  <td class="table-error">{{ e.predicted_label }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
     {% else %}
-      <table border="1">
-        <tr><th>Acurácia</th><th>Precisão</th><th>Recall</th><th>F1</th></tr>
-        <tr>
-          <td>{{ test_metrics.accuracy|floatformat:4 }}</td>
-          <td>{{ test_metrics.precision|floatformat:4 }}</td>
-          <td>{{ test_metrics.recall|floatformat:4 }}</td>
-          <td>{{ test_metrics.f1|floatformat:4 }}</td>
-        </tr>
-      </table>
-
-      <h3>Por classe</h3>
-      <table border="1">
-        <tr>
-          <th>Classe</th><th>Precisão</th><th>Recall</th>
-          <th>F1</th><th>Amostras</th>
-        </tr>
-        {% for c in test_metrics.per_class %}
-          <tr>
-            <td>{{ c.label }}</td>
-            <td>{{ c.precision|floatformat:4 }}</td>
-            <td>{{ c.recall|floatformat:4 }}</td>
-            <td>{{ c.f1|floatformat:4 }}</td>
-            <td>{{ c.support }}</td>
-          </tr>
-        {% endfor %}
-      </table>
+      <div class="empty">
+        <h3>Nenhuma planilha de teste importada</h3>
+        <p>Importe as predições do conjunto de teste para ver as métricas finais do modelo.</p>
+        <a class="btn btn-primary" href="{% url 'experiment_import' experiment.pk %}">Importar planilha</a>
+      </div>
     {% endif %}
-
-    {{ test_chart|safe }}
-
-    <h3>Piores erros</h3>
-    <table border="1">
-      <tr>
-        <th>Amostra</th><th>Real</th><th>Predito</th>
-        {% if is_regression %}<th>Erro</th>{% endif %}
-      </tr>
-      {% for e in worst_errors %}
-        <tr>
-          <td>{{ e.sample_id }}</td>
-          <td>{{ e.true_label }}</td>
-          <td>{{ e.predicted_label }}</td>
-          {% if is_regression %}<td>{{ e.error|floatformat:2 }}</td>{% endif %}
-        </tr>
-      {% endfor %}
-    </table>
-  {% else %}
-    <p>Nenhuma planilha de teste importada.</p>
-  {% endif %}
-</body>
-</html>
+  </section>
+{% endblock %}

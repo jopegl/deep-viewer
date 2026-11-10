@@ -1,11 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>Creating an experiment</h1>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Novo experimento | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <a href="{% url 'experiment_list' project.pk %}">{{ project.name }}</a>
+    <span>/</span>
+    <span>Novo experimento</span>
+  </nav>
+
+  <div class="page-head">
+    <div>
+      <h1>Novo experimento</h1>
+      <p class="lead">Um experimento é um treino. Depois de criar, você importa as planilhas dele.</p>
+    </div>
+  </div>
+
+  <form method="post" class="form form-card">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Criar experimento</button>
+      <a class="btn btn-ghost" href="{% url 'experiment_list' project.pk %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,31 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>Lista de Projetos</h1>
+{% extends "base.html" %}
 
-    <!-- Botão para criar novo projeto -->
-    <a href="{% url 'project_create' %}">Criar Novo Projeto</a>
+{% block title %}Projetos | Deep Viewer{% endblock %}
 
-    <hr>
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>Projetos</h1>
+      <p class="lead">Cada projeto reúne os experimentos de um mesmo estudo.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'project_create' %}">Novo projeto</a>
+  </div>
 
-    <ul>
-        {% for project in projects %}
-            <li>
-                <strong>{{ project.name }}</strong> - {{ project.description }}
-                
-                <!-- Link dinâmico para os experimentos deste projeto específico -->
-                <a href="{% url 'experiment_list' project.pk %}">[ Ver Experimentos ]</a>
-                <a href="{% url 'project_update' project.pk %}">[ Editar ]</a>
-                <a href="{% url 'project_delete' project.pk %}">[ Apagar ]</a>
-            </li>
-        {% empty %}
-            <p>Ainda não tens nenhum projeto registado.</p>
-        {% endfor %}
+  {% if projects %}
+    <ul class="project-list">
+      {% for project in projects %}
+        <li class="project-row">
+          <a class="project-main" href="{% url 'experiment_list' project.pk %}">
+            <span class="project-name">{{ project.name }}</span>
+            {% if project.description %}
+              <span class="project-desc">{{ project.description }}</span>
+            {% endif %}
+          </a>
+
+          <span class="project-count">
+            {% with total=project.experiments.count %}
+              <strong>{{ total }}</strong> experimento{{ total|pluralize }}
+            {% endwith %}
+          </span>
+
+          <span class="project-date">{{ project.created_at|date:"d/m/Y" }}</span>
+
+          <span class="project-actions">
+            <a class="btn btn-ghost btn-sm" href="{% url 'project_update' project.pk %}">Editar</a>
+            <a class="btn btn-ghost btn-sm btn-danger-text" href="{% url 'project_delete' project.pk %}">
+              Apagar
+            </a>
+          </span>
+        </li>
+      {% endfor %}
     </ul>
-</body>
-</html>
+  {% else %}
+    <div class="empty">
+      <h2>Nenhum projeto ainda</h2>
+      <p>Crie um projeto para organizar os treinos de um estudo e comparar os resultados.</p>
+      <a class="btn btn-primary" href="{% url 'project_create' %}">Criar o primeiro projeto</a>
+    </div>
+  {% endif %}
+{% endblock %}

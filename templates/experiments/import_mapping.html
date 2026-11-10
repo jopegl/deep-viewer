@@ -1,30 +1,36 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <title>Escolher colunas</title>
-</head>
-<body>
-  <h1>Escolher colunas</h1>
-  <p>Experimento: <strong>{{ experiment.name }}</strong></p>
+{% extends "base.html" %}
 
-  {% for message in messages %}
-    <p class="{{ message.tags }}">{{ message }}</p>
-  {% endfor %}
+{% block title %}Escolher colunas | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
 
-  <p>
-    Não encontramos
-    {% for col in missing %}
-      <code>{{ col }}</code>{% if not forloop.last %},{% endif %}
-    {% endfor %}
-    no arquivo. Diga qual coluna corresponde a cada campo:
-  </p>
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <a href="{% url 'experiment_list' experiment.project.pk %}">{{ experiment.project.name }}</a>
+    <span>/</span>
+    <a href="{% url 'experiment_results' experiment.pk %}">{{ experiment.name }}</a>
+  </nav>
 
-  <form method="post">
+  <div class="page-head">
+    <div>
+      <h1>Escolher colunas</h1>
+      <p class="lead">
+        Não encontramos
+        {% for col in missing %}
+          <code>{{ col }}</code>{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        no arquivo. Indique qual coluna corresponde a cada campo.
+      </p>
+    </div>
+  </div>
+
+  <form method="post" class="form form-card">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Importar</button>
-    <a href="{% url 'experiment_import' experiment.pk %}">Cancelar</a>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Importar</button>
+      <a class="btn btn-ghost" href="{% url 'experiment_import' experiment.pk %}">Cancelar</a>
+    </div>
   </form>
-</body>
-</html>
+{% endblock %}

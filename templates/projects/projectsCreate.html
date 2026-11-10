@@ -1,14 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <form method="post">
-        {% csrf_token %} {{ form.as_p }}
-        <button type="submit">Criar</button>
-    </form> 
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Novo projeto | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <span>Novo projeto</span>
+  </nav>
+
+  <div class="page-head">
+    <div>
+      <h1>Novo projeto</h1>
+      <p class="lead">Dê um nome ao estudo. Os experimentos são adicionados depois.</p>
+    </div>
+  </div>
+
+  <form method="post" class="form form-card">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Criar projeto</button>
+      <a class="btn btn-ghost" href="{% url 'project_list' %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}
