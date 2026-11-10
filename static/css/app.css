@@ -1374,3 +1374,77 @@ code {
 .is-reload .brand svg {
   animation: none;
 }
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: -8px 0 24px;
+}
+
+.filter-field {
+  display: block;
+  margin: 0;
+}
+
+.filter-search {
+  flex: 1 1 260px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 9px 14px 9px 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238fa39a' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E") no-repeat 14px 50% / 16px;
+  color: var(--text);
+  font: inherit;
+}
+
+.search-input::placeholder {
+  color: var(--faint);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-soft);
+}
+
+.filter-bar .select {
+  min-width: 170px;
+}
+
+.filter-bar .btn-sm {
+  padding: 12px 14px;
+}
+
+.filter-count {
+  margin: -12px 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 600px) {
+  .filter-bar .filter-field:not(.filter-search) {
+    flex: 1 1 140px;
+  }
+
+  .filter-bar .select {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Projetos | Deep Viewer{% endblock %}
+{% block body_class %}{% if request.GET %}is-reload{% endif %}{% endblock %}
 
 {% block content %}
   <div class="page-head">
@@ -10,6 +11,10 @@
     </div>
     <a class="btn btn-primary" href="{% url 'project_create' %}">Novo projeto</a>
   </div>
+
+  {% if total_count %}
+    {% include "partials/filter_bar.html" with shown=projects|length total=total_count noun="projeto" %}
+  {% endif %}
 
   {% if projects %}
     <ul class="project-list">
@@ -23,9 +28,7 @@
           </a>
 
           <span class="project-count">
-            {% with total=project.experiments.count %}
-              <strong>{{ total }}</strong> experimento{{ total|pluralize }}
-            {% endwith %}
+            <strong>{{ project.n_experiments }}</strong> experimento{{ project.n_experiments|pluralize }}
           </span>
 
           <span class="project-date">{{ project.created_at|date:"d/m/Y" }}</span>
@@ -39,6 +42,12 @@
         </li>
       {% endfor %}
     </ul>
+  {% elif total_count %}
+    <div class="empty">
+      <h2>Nenhum projeto encontrado</h2>
+      <p>Nenhum projeto corresponde à busca. Tente outro termo ou limpe os filtros.</p>
+      <a class="btn btn-ghost" href="?">Limpar filtros</a>
+    </div>
   {% else %}
     <div class="empty">
       <h2>Nenhum projeto ainda</h2>

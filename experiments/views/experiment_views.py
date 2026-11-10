@@ -1,32 +1,36 @@
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpRequest
-from django.views.generic import *
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from ..forms.experiment_forms import *
-from django.urls import reverse
 from django.contrib import messages
-from django.views.generic import DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+
+from ..forms.experiment_forms import ExperimentForm
+from ..forms.filter_forms import ExperimentFilterForm
+from ..models import Experiment, Project
 
 
-class ExperimentListView(ListView):
+class ExperimentListView(LoginRequiredMixin, ListView):
     model = Experiment
     template_name = "experiments/experimentsList.html"
     context_object_name = "experiment_list"
 
     def get_queryset(self):
-        self.project = get_object_or_404(Project, pk=self.kwargs["pk"])
-        return Experiment.objects.filter(project=self.project)
+        self.project = get_object_or_404(Project, pk=self.kwargs["pk"], analyst=self.request.user)
+        self.filter_form = ExperimentFilterForm(self.request.GET)
+        return self.filter_form.filter(self.project.experiments.all())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.project
+        context["filter_form"] = self.filter_form
+        context["total_count"] = self.project.experiments.count()
         return context
+
 
 class ExperimentCreateView(LoginRequiredMixin, CreateView):
     model = Experiment
     form_class = ExperimentForm
-    template_name =  'experiments/experimentCreate.html'
+    template_name = "experiments/experimentCreate.html"
 
     def get_success_url(self):
         return reverse("experiment_list", kwargs={"pk": self.object.project.pk})
@@ -47,22 +51,17 @@ class ExperimentCreateView(LoginRequiredMixin, CreateView):
         form.instance.project = self.get_project()
         return super().form_valid(form)
 
-    
-
 
 class ExperimentUpdateView(LoginRequiredMixin, UpdateView):
-  model = Experiment
-  form_class = ExperimentForm
-  template_name = "experiments/experimentUpdate.html"
-  success_url = reverse_lazy("experiment_list")
+    model = Experiment
+    form_class = ExperimentForm
+    template_name = "experiments/experimentUpdate.html"
 
+    def get_queryset(self):
+        return Experiment.objects.filter(project__analyst=self.request.user)
 
-class ExperimentDeleteView(LoginRequiredMixin, DeleteView):
-  model = Experiment
-  template_name = "experiments/experimentConfirmDelete.html"
-  success_url = reverse_lazy("experiment_list")
-
-
+    def get_success_url(self):
+        return reverse("experiment_list", kwargs={"pk": self.object.project_id})
 
 
 class ExperimentDeleteView(LoginRequiredMixin, DeleteView):
