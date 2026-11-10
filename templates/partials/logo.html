@@ -1,4 +1,32 @@
-<svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
-  <rect x="1" y="1" width="26" height="26" rx="8" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5" />
-  <path d="M6 8c3 0 4 10 8 11s5-2 8-2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  width="28"
+  height="28"
+  aria-hidden="true"
+  fill="none"
+>
+  <defs>
+    <clipPath id="logo-eye">
+      <path d="M6 32 Q32 6 58 32 Q32 58 6 32 Z" />
+    </clipPath>
+    <mask id="logo-slit">
+      <rect width="64" height="64" fill="#fff" />
+      <path d="M32 21 Q37 32 32 43 Q27 32 32 21 Z" fill="#000" />
+    </mask>
+  </defs>
+  <circle
+    cx="32"
+    cy="32"
+    r="13"
+    fill="currentColor"
+    clip-path="url(#logo-eye)"
+    mask="url(#logo-slit)"
+  />
+  <path
+    d="M6 32 Q32 6 58 32 Q32 58 6 32 Z"
+    stroke="currentColor"
+    stroke-width="3.5"
+    stroke-linejoin="round"
+  />
 </svg>

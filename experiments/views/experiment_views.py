@@ -25,8 +25,23 @@ class ExperimentCreateView(LoginRequiredMixin, CreateView):
     template_name =  'experiments/experimentCreate.html'
     success_url = reverse_lazy("experiment_list")
 
+    def get_project(self):
+        if not hasattr(self, "_project"):
+            self._project = get_object_or_404(
+                Project, pk=self.kwargs["pk"], analyst=self.request.user
+            )
+        return self._project
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.get_project()
+        return context
+
     def form_valid(self, form):
+        form.instance.project = self.get_project()
         return super().form_valid(form)
+
+    
 
 
 class ExperimentUpdateView(LoginRequiredMixin, UpdateView):

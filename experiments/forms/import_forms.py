@@ -2,6 +2,8 @@ from django import forms
 
 from ..models import ExperimentFileType
 
+MAX_UPLOAD_MB = 20
+
 
 class UploadForm(forms.Form):
     kind = forms.ChoiceField(label="Tipo de planilha", choices=ExperimentFileType.choices)
@@ -11,6 +13,10 @@ class UploadForm(forms.Form):
         f = self.cleaned_data["file"]
         if not f.name.lower().endswith((".csv", ".xlsx", ".xls")):
             raise forms.ValidationError("Envie um arquivo .csv, .xlsx ou .xls.")
+        if f.size == 0:
+            raise forms.ValidationError("O arquivo está vazio.")
+        if f.size > MAX_UPLOAD_MB * 1024 * 1024:
+            raise forms.ValidationError(f"O arquivo pode ter no máximo {MAX_UPLOAD_MB} MB.")
         return f
 
 class ColumnMappingForm(forms.Form):

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <clipPath id="eye-shape">
+      <path d="M6 32 Q32 6 58 32 Q32 58 6 32 Z"/>
+    </clipPath>
+    <mask id="eye-slit">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M32 21 Q37 32 32 43 Q27 32 32 21 Z" fill="#000"/>
+    </mask>
+  </defs>
+  <circle cx="32" cy="32" r="13" fill="#4cc38a" clip-path="url(#eye-shape)" mask="url(#eye-slit)"/>
+  <path d="M6 32 Q32 6 58 32 Q32 58 6 32 Z" stroke="#4cc38a" stroke-width="3.5" stroke-linejoin="round"/>
+</svg>
