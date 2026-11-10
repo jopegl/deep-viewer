@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}{{ experiment.name }} | Deep Viewer{% endblock %}
+{% block body_class %}{% if request.GET %}is-reload{% endif %}{% endblock %}
 
 {% block content %}
   <nav class="crumbs" aria-label="Você está em">
@@ -15,17 +16,27 @@
     <div>
       <h1>{{ experiment.name }}</h1>
       <div class="tags">
-        <span class="tag tag-task">{{ experiment.get_task_display }}</span>
+        {% with task=experiment.task_label %}
+          {% if task %}
+            <span class="tag tag-task">{{ task }}</span>
+          {% endif %}
+        {% endwith %}
         <span class="tag">Por {{ experiment.get_step_unit_display|lower }}</span>
         {% if experiment.architecture %}
           <span class="tag">{{ experiment.architecture }}</span>
         {% endif %}
+        {% if outputs|length > 1 %}
+          <span class="tag">{{ outputs|length }} saídas</span>
+        {% endif %}
       </div>
     </div>
-    <a class="btn btn-ghost" href="{% url 'experiment_import' experiment.pk %}">Importar planilhas</a>
+    <div class="form-actions">
+      <a class="btn btn-ghost" href="{% url 'experiment_import' experiment.pk %}">Importar planilhas</a>
+      <a class="btn btn-ghost btn-danger-text" href="{% url 'experiment_delete' experiment.pk %}">Excluir</a>
+    </div>
   </div>
 
-  <section class="section">
+  <section class="section" id="treino">
     <div class="panel">
       <div class="panel-head">
         <div>
@@ -33,7 +44,10 @@
           <p>Evolução no conjunto de treino e no de validação.</p>
         </div>
         {% if training_chart %}
-          <form method="get" class="inline-form">
+          <form method="get" action="#treino" class="inline-form">
+            {% if output %}
+              <input type="hidden" name="output" value="{{ output.name }}">
+            {% endif %}
             <label for="metric">Métrica</label>
             <select class="select" name="metric" id="metric" onchange="this.form.submit()">
               {% for name in metric_names %}
@@ -61,14 +75,34 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" id="teste">
     <div class="section-head">
       <div>
         <h2>Teste</h2>
         {% if test_metrics %}
-          <p>Calculado sobre {{ test_metrics.n_samples }} amostras do conjunto de teste.</p>
+          {% if outputs|length > 1 %}
+            <p>Saída <strong>{{ output.name }}</strong> ({{ output.get_task_display|lower }}), calculada sobre {{ test_metrics.n_samples }} amostras.</p>
+          {% else %}
+            <p>Calculado sobre {{ test_metrics.n_samples }} amostras do conjunto de teste.</p>
+          {% endif %}
         {% endif %}
       </div>
+      {% if outputs|length > 1 %}
+        <form method="get" action="#teste" class="inline-form">
+          <input type="hidden" name="metric" value="{{ selected_metric }}">
+          <label for="output">Saída</label>
+          <select class="select" name="output" id="output" onchange="this.form.submit()">
+            {% for o in outputs %}
+              {% if o == output %}
+                <option value="{{ o.name }}" selected>{{ o.name }} ({{ o.get_task_display|lower }})</option>
+              {% else %}
+                <option value="{{ o.name }}">{{ o.name }} ({{ o.get_task_display|lower }})</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <noscript><button type="submit" class="btn btn-ghost btn-sm">Mostrar</button></noscript>
+        </form>
+      {% endif %}
     </div>
 
     {% if test_metrics %}

@@ -23,7 +23,7 @@
   {% if experiment_list %}
     <div class="exp-grid">
       {% for experiment in experiment_list %}
-        <article class="exp-card">
+        <article class="exp-card" style="--i: {{ forloop.counter0 }}">
           {% loss_sparkline experiment as spark %}
           {% if spark %}
             <a class="exp-curve" href="{% url 'experiment_results' experiment.pk %}"
@@ -46,7 +46,11 @@
             </h2>
             <p class="exp-arch">{{ experiment.architecture|default:"Arquitetura não informada" }}</p>
             <div class="tags">
-              <span class="tag tag-task">{{ experiment.get_task_display }}</span>
+              {% with task=experiment.task_label %}
+                {% if task %}
+                  <span class="tag tag-task">{{ task }}</span>
+                {% endif %}
+              {% endwith %}
               <span class="tag">Por {{ experiment.get_step_unit_display|lower }}</span>
             </div>
           </div>
@@ -58,11 +62,7 @@
             </div>
             <div>
               <dt>Amostras de teste</dt>
-              {% if experiment.task == "Regression" %}
-                <dd>{{ experiment.regr_preds.count }}</dd>
-              {% else %}
-                <dd>{{ experiment.classi_preds.count }}</dd>
-              {% endif %}
+              <dd>{{ experiment.test_sample_count }}</dd>
             </div>
           </dl>
 

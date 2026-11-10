@@ -161,10 +161,10 @@ def compare_training_curves(experiments, metric="loss", split="val"):
     return _to_html(fig, animate=True)
 
 
-def confusion_matrix_chart(experiment):
-    if experiment.task != TaskType.CLASSIF:
+def confusion_matrix_chart(output):
+    if output.task != TaskType.CLASSIF:
         return None
-    df = load_predictions(experiment)
+    df = load_predictions(output)
     if df.empty:
         return None
 
@@ -183,10 +183,10 @@ def confusion_matrix_chart(experiment):
     return _to_html(fig)
 
 
-def true_vs_predicted_chart(experiment):
-    if experiment.task != TaskType.REGR:
+def true_vs_predicted_chart(output):
+    if output.task != TaskType.REGR:
         return None
-    df = load_predictions(experiment)
+    df = load_predictions(output)
     if df.empty:
         return None
 

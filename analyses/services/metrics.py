@@ -4,13 +4,12 @@ import pandas as pd
 from experiments.models import TaskType
 
 
-def load_predictions(experiment):
-    columns = ["sample_id", "true_label", "predicted_label"]
-    if experiment.task == TaskType.REGR:
-        rows = experiment.regr_preds.values(*columns)
-    else:
-        rows = experiment.classi_preds.values(*columns)
-    return pd.DataFrame(list(rows), columns=columns)
+def load_predictions(output):
+    queryset = output.regr_preds if output.task == TaskType.REGR else output.classi_preds
+    rows = queryset.values("sample_id", "true_label", "predicted_label")
+    return pd.DataFrame(list(rows), columns=["sample_id", "true_label", "predicted_label"])
+
+
 
 
 def classification_metrics(y_true, y_pred):
@@ -77,12 +76,12 @@ def regression_metrics(y_true, y_pred):
     }
 
 
-def experiment_metrics(experiment):
-    df = load_predictions(experiment)
+def output_metrics(output):
+    df = load_predictions(output)
     if df.empty:
         return None
 
-    if experiment.task == TaskType.REGR:
+    if output.task == TaskType.REGR:
         metrics = regression_metrics(df["true_label"], df["predicted_label"])
     else:
         metrics = classification_metrics(df["true_label"], df["predicted_label"])
@@ -90,12 +89,12 @@ def experiment_metrics(experiment):
     return metrics
 
 
-def worst_errors(experiment, n=10):
-    df = load_predictions(experiment)
+def worst_errors(output, n=10):
+    df = load_predictions(output)
     if df.empty:
         return []
 
-    if experiment.task == TaskType.REGR:
+    if output.task == TaskType.REGR:
         df["error"] = (df["predicted_label"] - df["true_label"]).abs()
         df = df.sort_values("error", ascending=False)
     else:

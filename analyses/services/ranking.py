@@ -1,6 +1,6 @@
-from experiments.models import TaskType
+from experiments.models import Output, TaskType
 
-from .metrics import experiment_metrics
+from .metrics import output_metrics
 
 
 RANKING_METRICS = {
@@ -22,13 +22,22 @@ RANKING_METRICS = {
 LOWER_IS_BETTER = {"mae", "rmse", "mre"}
 
 
-def rank_experiments(project, task, metric):
+def rank_experiments(project, task, metric, output_name=None):
+    outputs = Output.objects.filter(experiment__project=project, task=task).select_related("experiment")
+    if output_name:
+        outputs = outputs.filter(name=output_name)
+
     rows = []
-    for experiment in project.experiments.filter(task=task):
-        metrics = experiment_metrics(experiment)
+    for output in outputs:
+        metrics = output_metrics(output)
         if metrics is None or metrics[metric] is None:
             continue
-        rows.append({"experiment": experiment, "value": metrics[metric], "metrics": metrics})
+        rows.append({
+            "experiment": output.experiment,
+            "output": output,
+            "value": metrics[metric],
+            "metrics": metrics,
+        })
 
     rows.sort(key=lambda row: row["value"], reverse=metric not in LOWER_IS_BETTER)
     for position, row in enumerate(rows, start=1):

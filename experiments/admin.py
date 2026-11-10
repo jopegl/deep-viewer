@@ -6,6 +6,7 @@ from .models import (
     HistoryEntry,
     Hyperparameter,
     ImportedFile,
+    Output,
     Project,
     RegressionPrediction,
     StepMetric,
@@ -16,7 +17,7 @@ from .models import (
 class ExperimentInline(admin.TabularInline):
     model = Experiment
     extra = 0
-    fields = ("name", "task", "architecture")
+    fields = ("name", "architecture", "step_unit")
     show_change_link = True
 
 
@@ -39,14 +40,29 @@ class ImportedFileInline(admin.TabularInline):
     readonly_fields = ("imported_at",)
 
 
+class OutputInline(admin.TabularInline):
+    model = Output
+    extra = 0
+    fields = ("name", "task")
+    show_change_link = True
+
+
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ("name", "project", "task", "architecture", "created_at")
-    list_filter = ("task", "project")
+    list_display = ("name", "project", "step_unit", "architecture", "created_at")
+    list_filter = ("step_unit", "project")
     search_fields = ("name", "architecture", "notes")
     readonly_fields = ("created_at",)
     list_select_related = ("project",)
-    inlines = [HyperparameterInline, ImportedFileInline]
+    inlines = [OutputInline, HyperparameterInline, ImportedFileInline]
+
+
+@admin.register(Output)
+class OutputAdmin(admin.ModelAdmin):
+    list_display = ("name", "experiment", "task")
+    list_filter = ("task", "experiment__project")
+    search_fields = ("name", "experiment__name")
+    list_select_related = ("experiment",)
 
 
 @admin.register(Hyperparameter)
@@ -87,20 +103,18 @@ class ImportedFileAdmin(admin.ModelAdmin):
 
 @admin.register(ClassificationPrediction)
 class ClassificationPredictionAdmin(admin.ModelAdmin):
-    list_display = ("sample_id", "experiment", "true_label", "predicted_label")
-    list_filter = ("experiment",)
+    list_display = ("sample_id", "output", "true_label", "predicted_label")
+    list_filter = ("output__experiment", "output")
     search_fields = ("sample_id",)
-    list_select_related = ("experiment",)
-    list_per_page = 50
+    list_select_related = ("output__experiment",)
 
 
 @admin.register(RegressionPrediction)
 class RegressionPredictionAdmin(admin.ModelAdmin):
-    list_display = ("sample_id", "experiment", "true_label", "predicted_label")
-    list_filter = ("experiment",)
+    list_display = ("sample_id", "output", "true_label", "predicted_label")
+    list_filter = ("output__experiment", "output")
     search_fields = ("sample_id",)
-    list_select_related = ("experiment",)
-    list_per_page = 50
+    list_select_related = ("output__experiment",)
 
 
 @admin.register(HistoryEntry)

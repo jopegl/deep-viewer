@@ -1,6 +1,7 @@
 import pandas as pd
 
 from experiments.services.exceptions import ImportValidationError
+from experiments.models import TaskType
 
 TRAIN_FIELDS = {
     "step": "Passo (época ou iteração)",
@@ -121,3 +122,55 @@ def prepare_test(df, mapping, is_regression):
         data["true_label"] = data["true_label"].astype(str)
         data["predicted_label"] = data["predicted_label"].astype(str)
     return data
+
+def find_outputs(df):
+    columns = {c.lower(): c for c in df.columns}
+    outputs = []
+    for low, original in columns.items():
+        if low.startswith("true_") and low != "true_label":
+            name = low[len("true_"):]
+            pred = columns.get(f"pred_{name}")
+            if pred:
+                outputs.append((name, original, pred))
+    return outputs
+
+
+def detect_task(values):
+    numeric = pd.to_numeric(values, errors="coerce")
+    if numeric.isna().any():
+        return TaskType.CLASSIF
+    if (numeric % 1 == 0).all() and numeric.nunique() <= 20:
+        return TaskType.CLASSIF
+    return TaskType.REGR
+
+
+def _labels(series):
+    numeric = pd.to_numeric(series, errors="coerce")
+    if numeric.notna().all() and (numeric % 1 == 0).all():
+        return numeric.astype("int64").astype(str)
+    return series.astype(str).str.strip()
+
+
+def prepare_outputs(df):
+    columns = {c.lower(): c for c in df.columns}
+    if "sample_id" not in columns:
+        raise ImportValidationError(["A planilha precisa da coluna sample_id."])
+
+    outputs = []
+    for name, true_col, pred_col in find_outputs(df):
+        filled = df[true_col].notna() & df[pred_col].notna()
+        part = df[filled]
+        sample_ids = part[columns["sample_id"]].astype(str).str.strip()
+        task = detect_task(pd.concat([part[true_col], part[pred_col]]))
+        if task == TaskType.REGR:
+            true_values = pd.to_numeric(part[true_col])
+            pred_values = pd.to_numeric(part[pred_col])
+        else:
+            true_values = _labels(part[true_col])
+            pred_values = _labels(part[pred_col])
+        outputs.append({
+            "name": name,
+            "task": task,
+            "rows": list(zip(sample_ids, true_values, pred_values)),
+        })
+    return outputs

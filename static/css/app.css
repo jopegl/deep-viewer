@@ -1368,3 +1368,9 @@ code {
 .autocomplete-list .autocomplete-empty:hover {
   background: none;
 }
+
+.is-reload .page > *,
+.is-reload .kpi,
+.is-reload .brand svg {
+  animation: none;
+}

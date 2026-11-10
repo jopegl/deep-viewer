@@ -9,6 +9,5 @@ class ExperimentForm(forms.ModelForm):
             "name",
             "architecture",
             "notes",
-            "task",
             "step_unit"
         ]

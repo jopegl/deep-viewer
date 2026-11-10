@@ -1,19 +1,29 @@
 import pandas as pd
-from experiments.models import StepMetric, TrainingStep, ClassificationPrediction, RegressionPrediction, TaskType, ExperimentFileType, TaskType
-
 from django.core.files.storage import default_storage
 from django.db import transaction
 
+from experiments.models import (
+    ClassificationPrediction,
+    ExperimentFileType,
+    Output,
+    RegressionPrediction,
+    StepMetric,
+    TaskType,
+    TrainingStep,
+)
 from experiments.services.parsing import (
+    detect_task,
     find_metric_columns,
+    find_outputs,
     match_test_columns,
     match_train_columns,
+    prepare_outputs,
     prepare_test,
     prepare_training,
     read_table,
 )
 
-BATCH_SIZE = 2000 #quantas linhas vão em cada comando de gravação
+BATCH_SIZE = 2000
 
 
 def _float_or_none(value):
@@ -25,7 +35,7 @@ def _int_or_none(value):
 
 
 def save_training(experiment, steps, metrics):
-    experiment.steps.all().delete() 
+    experiment.steps.all().delete()
 
     TrainingStep.objects.bulk_create(
         [
@@ -51,27 +61,25 @@ def save_training(experiment, steps, metrics):
     )
 
 
-def save_test(experiment, predictions): 
-    experiment.classi_preds.all().delete()
-    experiment.regr_preds.all().delete()
+def save_outputs(experiment, outputs):
+    experiment.outputs.all().delete()
+    for data in outputs:
+        output = Output.objects.create(experiment=experiment, name=data["name"], task=data["task"])
+        model = RegressionPrediction if data["task"] == TaskType.REGR else ClassificationPrediction
+        model.objects.bulk_create(
+            [model(output=output, sample_id=s, true_label=t, predicted_label=p) for s, t, p in data["rows"]],
+            batch_size=BATCH_SIZE,
+        )
 
-    if experiment.task == TaskType.REGR:
-        model = RegressionPrediction
-    else:
-        model = ClassificationPrediction
 
-    model.objects.bulk_create(
-        [
-            model(
-                experiment=experiment,
-                sample_id=row.sample_id,
-                true_label=row.true_label,
-                predicted_label=row.predicted_label,
-            )
-            for row in predictions.itertuples(index=False)
-        ],
-        batch_size=BATCH_SIZE,
-    )
+def save_test(experiment, predictions, task):
+    rows = list(zip(
+        predictions["sample_id"],
+        predictions["true_label"],
+        predictions["predicted_label"],
+    ))
+    save_outputs(experiment, [{"name": "principal", "task": task, "rows": rows}])
+
 
 def store_upload(experiment, uploaded_file):
     return default_storage.save(f"imports/{experiment.pk}/{uploaded_file.name}", uploaded_file)
@@ -90,15 +98,28 @@ def run_import(experiment, kind, df, mapping):
             save_training(experiment, steps, metrics)
         return {"steps": len(steps), "metrics": len(metrics)}
 
-    predictions = prepare_test(df, mapping, is_regression=experiment.task == TaskType.REGR)
+    values = pd.concat([df[mapping["true_label"]], df[mapping["predicted_label"]]]).dropna()
+    task = detect_task(values)
+    predictions = prepare_test(df, mapping, is_regression=task == TaskType.REGR)
     with transaction.atomic():
-        save_test(experiment, predictions)
-    return {"samples": len(predictions)}
+        save_test(experiment, predictions, task)
+    return {"samples": len(predictions), "task": task}
 
 
 def start_import(experiment, kind, uploaded_file):
     stored_path = store_upload(experiment, uploaded_file)
     df = load_table(stored_path)
+
+    if kind == ExperimentFileType.TEST and find_outputs(df):
+        outputs = prepare_outputs(df)
+        with transaction.atomic():
+            save_outputs(experiment, outputs)
+        names = ", ".join(f"{o['name']} ({o['task']})" for o in outputs)
+        return {
+            "imported": True,
+            "stored_path": stored_path,
+            "summary": {"samples": len(df), "outputs": names},
+        }
 
     if kind == ExperimentFileType.TRAIN:
         mapping, missing = match_train_columns(df.columns, experiment.step_unit)
