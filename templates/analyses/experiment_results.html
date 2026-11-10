@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Resultados</title>
+</head>
+<body>
+  <h1>{{ experiment.name }}</h1>
+  <p>
+    {{ experiment.get_task_display }}
+    | <a href="{% url 'experiment_import' experiment.pk %}">Importar planilhas</a>
+  </p>
+
+  <h2>Treino</h2>
+  {% if training_chart %}
+    <form method="get">
+      <label for="metric">Métrica:</label>
+      <select name="metric" id="metric" onchange="this.form.submit()">
+        {% for name in metric_names %}
+          {% if name == selected_metric %}
+            <option value="{{ name }}" selected>{{ name }}</option>
+          {% else %}
+            <option value="{{ name }}">{{ name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </form>
+    {{ training_chart|safe }}
+  {% else %}
+    <p>Nenhuma planilha de treino importada.</p>
+  {% endif %}
+
+  <h2>Teste</h2>
+  {% if test_metrics %}
+    <p>{{ test_metrics.n_samples }} amostras</p>
+
+    {% if is_regression %}
+      <table border="1">
+        <tr><th>MAE</th><th>RMSE</th><th>R²</th><th>MRE</th></tr>
+        <tr>
+          <td>{{ test_metrics.mae|floatformat:4 }}</td>
+          <td>{{ test_metrics.rmse|floatformat:4 }}</td>
+          <td>{{ test_metrics.r2|floatformat:4 }}</td>
+          <td>
+            {% if test_metrics.mre is not None %}
+              {{ test_metrics.mre|floatformat:4 }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    {% else %}
+      <table border="1">
+        <tr><th>Acurácia</th><th>Precisão</th><th>Recall</th><th>F1</th></tr>
+        <tr>
+          <td>{{ test_metrics.accuracy|floatformat:4 }}</td>
+          <td>{{ test_metrics.precision|floatformat:4 }}</td>
+          <td>{{ test_metrics.recall|floatformat:4 }}</td>
+          <td>{{ test_metrics.f1|floatformat:4 }}</td>
+        </tr>
+      </table>
+
+      <h3>Por classe</h3>
+      <table border="1">
+        <tr>
+          <th>Classe</th><th>Precisão</th><th>Recall</th>
+          <th>F1</th><th>Amostras</th>
+        </tr>
+        {% for c in test_metrics.per_class %}
+          <tr>
+            <td>{{ c.label }}</td>
+            <td>{{ c.precision|floatformat:4 }}</td>
+            <td>{{ c.recall|floatformat:4 }}</td>
+            <td>{{ c.f1|floatformat:4 }}</td>
+            <td>{{ c.support }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+
+    {{ test_chart|safe }}
+
+    <h3>Piores erros</h3>
+    <table border="1">
+      <tr>
+        <th>Amostra</th><th>Real</th><th>Predito</th>
+        {% if is_regression %}<th>Erro</th>{% endif %}
+      </tr>
+      {% for e in worst_errors %}
+        <tr>
+          <td>{{ e.sample_id }}</td>
+          <td>{{ e.true_label }}</td>
+          <td>{{ e.predicted_label }}</td>
+          {% if is_regression %}<td>{{ e.error|floatformat:2 }}</td>{% endif %}
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>Nenhuma planilha de teste importada.</p>
+  {% endif %}
+</body>
+</html>

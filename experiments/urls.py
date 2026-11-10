@@ -3,7 +3,7 @@ from .views import project_views, import_views, experiment_views
 
 
 
-urlpatterns = [ 
+urlpatterns = [
     
      path('projects/', 
          project_views.ProjectListView.as_view(), 
