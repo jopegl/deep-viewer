@@ -3,7 +3,30 @@ from django.views.generic import CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 
+from django.contrib.auth.decorators import login_not_required
+from django.contrib.auth.views import redirect_to_login
+from django.http import Http404
+from django.shortcuts import redirect
 from .forms import SignUpForm, ProfileForm
+
+
+@login_not_required
+def admin_redirect(request):
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.GET.get("next", "/admin/"))
+    if request.user.is_staff:
+        return redirect("admin:index")
+    raise Http404
+
+
+
+@login_not_required
+def admin_login(request):
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.GET.get("next", "/admin/"))
+    if request.user.is_staff:
+        return redirect("admin:index")
+    raise Http404
 
 
 class SignUpView(CreateView):
