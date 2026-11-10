@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmar saídas | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <a href="{% url 'experiment_list' experiment.project.pk %}">{{ experiment.project.name }}</a>
+    <span>/</span>
+    <a href="{% url 'experiment_results' experiment.pk %}">{{ experiment.name }}</a>
+  </nav>
+
+  <div class="page-head">
+    <div>
+      <h1>Confirmar o tipo de cada saída</h1>
+      <p class="lead">O tipo foi sugerido a partir dos valores da planilha. Confira os exemplos e corrija se estiver errado.</p>
+    </div>
+  </div>
+
+  <form method="post" class="form form-card">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Importar</button>
+      <a class="btn btn-ghost" href="{% url 'experiment_import' experiment.pk %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

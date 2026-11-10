@@ -1,6 +1,7 @@
 from django import forms
+from django.utils.html import escape
 
-from ..models import ExperimentFileType
+from ..models import ExperimentFileType, TaskType
 
 MAX_UPLOAD_MB = 20
 
@@ -18,6 +19,7 @@ class UploadForm(forms.Form):
         if f.size > MAX_UPLOAD_MB * 1024 * 1024:
             raise forms.ValidationError(f"O arquivo pode ter no máximo {MAX_UPLOAD_MB} MB.")
         return f
+
 
 class ColumnMappingForm(forms.Form):
     def __init__(self, *args, columns, fields, required_fields, initial_mapping=None, **kwargs):
@@ -42,3 +44,22 @@ class ColumnMappingForm(forms.Form):
 
     def get_mapping(self):
         return {field: (col or None) for field, col in self.cleaned_data.items()}
+
+
+class OutputTaskForm(forms.Form):
+    def __init__(self, *args, outputs, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.outputs = outputs
+        for index, output in enumerate(outputs):
+            self.fields[f"task_{index}"] = forms.ChoiceField(
+                label=output["name"],
+                choices=TaskType.choices,
+                initial=output["suggested"],
+                help_text=escape("Exemplos de valores: " + ", ".join(output["examples"])),
+            )
+
+    def get_tasks(self):
+        return {
+            output["name"]: self.cleaned_data[f"task_{index}"]
+            for index, output in enumerate(self.outputs)
+        }

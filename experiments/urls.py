@@ -36,6 +36,8 @@ urlpatterns = [
 
      path("experiments/<int:pk>/import/", import_views.import_upload, name="experiment_import"),
 
+     path("experiments/<int:pk>/import/tasks/", import_views.import_tasks, name="experiment_import_tasks"),
+
      path("experiments/<int:pk>/import/columns/", import_views.import_mapping, name="experiment_import_mapping"),
 
 ]

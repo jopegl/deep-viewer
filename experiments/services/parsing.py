@@ -94,34 +94,13 @@ def prepare_training(df, mapping, metric_columns=()):
     return steps, metrics
 
 
-def prepare_test(df, mapping, is_regression):
-    data = pd.DataFrame({
-        "sample_id": df[mapping["sample_id"]].astype(str),
-        "true_label": df[mapping["true_label"]],
-        "predicted_label": df[mapping["predicted_label"]],
+def normalize_test(df, mapping):
+    return pd.DataFrame({
+        "sample_id": df[mapping["sample_id"]],
+        "true_principal": df[mapping["true_label"]],
+        "pred_principal": df[mapping["predicted_label"]],
     })
 
-    if is_regression:
-        bad_columns = []
-        bad_lines = set()
-        for field, label in (("true_label", "Valor real"), ("predicted_label", "Valor predito")):
-            numbers = pd.to_numeric(data[field], errors="coerce")
-            invalid = numbers.isna() & data[field].notna()
-            if invalid.any():
-                bad_columns.append(label)
-                bad_lines.update(invalid[invalid].index)
-            data[field] = numbers
-
-        if bad_columns:
-            lines = ", ".join(str(i + 2) for i in sorted(bad_lines)[:5])
-            raise ImportValidationError([
-                f"{' e '.join(bad_columns)} têm valores que não são números (linhas {lines}). "
-                "Este experimento é de regressão: a planilha é de classificação?"
-            ])
-    else:
-        data["true_label"] = data["true_label"].astype(str)
-        data["predicted_label"] = data["predicted_label"].astype(str)
-    return data
 
 def find_outputs(df):
     columns = {c.lower(): c for c in df.columns}
@@ -144,6 +123,30 @@ def detect_task(values):
     return TaskType.REGR
 
 
+def _sample_column(df):
+    columns = {c.lower(): c for c in df.columns}
+    if "sample_id" not in columns:
+        raise ImportValidationError(["A planilha precisa da coluna sample_id."])
+    return columns["sample_id"]
+
+
+def describe_outputs(df):
+    _sample_column(df)
+    outputs = []
+    for name, true_col, pred_col in find_outputs(df):
+        values = pd.concat([df[true_col], df[pred_col]]).dropna()
+        if values.empty:
+            continue
+        outputs.append({
+            "name": name,
+            "suggested": detect_task(values).value,
+            "examples": values.astype(str).str.strip().drop_duplicates().head(5).tolist(),
+        })
+    if not outputs:
+        raise ImportValidationError(["Nenhuma saída da planilha tem valores preenchidos."])
+    return outputs
+
+
 def _labels(series):
     numeric = pd.to_numeric(series, errors="coerce")
     if numeric.notna().all() and (numeric % 1 == 0).all():
@@ -151,20 +154,31 @@ def _labels(series):
     return series.astype(str).str.strip()
 
 
-def prepare_outputs(df):
-    columns = {c.lower(): c for c in df.columns}
-    if "sample_id" not in columns:
-        raise ImportValidationError(["A planilha precisa da coluna sample_id."])
+def _numbers(part, column, output_name, label):
+    numbers = pd.to_numeric(part[column], errors="coerce")
+    invalid = numbers.isna()
+    if invalid.any():
+        lines = ", ".join(str(i + 2) for i in part.index[invalid.to_numpy()][:5])
+        raise ImportValidationError([
+            f"A saída '{output_name}' foi marcada como regressão, mas o {label} "
+            f"tem valores que não são números (linhas {lines})."
+        ])
+    return numbers
 
+
+def prepare_outputs(df, tasks):
+    sample_col = _sample_column(df)
     outputs = []
     for name, true_col, pred_col in find_outputs(df):
+        if name not in tasks:
+            continue
+        task = tasks[name]
         filled = df[true_col].notna() & df[pred_col].notna()
         part = df[filled]
-        sample_ids = part[columns["sample_id"]].astype(str).str.strip()
-        task = detect_task(pd.concat([part[true_col], part[pred_col]]))
+        sample_ids = part[sample_col].astype(str).str.strip()
         if task == TaskType.REGR:
-            true_values = pd.to_numeric(part[true_col])
-            pred_values = pd.to_numeric(part[pred_col])
+            true_values = _numbers(part, true_col, name, "valor real")
+            pred_values = _numbers(part, pred_col, name, "valor predito")
         else:
             true_values = _labels(part[true_col])
             pred_values = _labels(part[pred_col])

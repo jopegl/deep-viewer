@@ -2,9 +2,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from ..forms.import_forms import ColumnMappingForm, UploadForm
+from ..forms.import_forms import ColumnMappingForm, OutputTaskForm, UploadForm
 from ..models import Experiment, ExperimentFileType
-from ..services.importing import finish_import, start_import
+from ..services.exceptions import ImportValidationError
+from ..services.importing import continue_import, finish_test_import, start_import
 from ..services.parsing import (
     TEST_FIELDS,
     TRAIN_FIELDS,
@@ -14,12 +15,6 @@ from ..services.parsing import (
 )
 
 SESSION_KEY = "pending_import"
-
-
-def _summary_text(kind, summary):
-    if kind == ExperimentFileType.TRAIN:
-        return f"{summary['steps']} passos e {summary['metrics']} métricas"
-    return f"{summary['samples']} amostras"
 
 
 def _mapping_fields(experiment, kind):
@@ -33,6 +28,29 @@ def _mapping_fields(experiment, kind):
     return fields, required
 
 
+def _pending(request, experiment):
+    pending = request.session.get(SESSION_KEY)
+    if not pending or pending["experiment"] != experiment.pk:
+        return None
+    return pending
+
+
+def _go_to_next_step(request, experiment, kind, result):
+    if result["next"] == "done":
+        request.session.pop(SESSION_KEY, None)
+        summary = result["summary"]
+        messages.success(request, f"Planilha importada: {summary['steps']} passos e {summary['metrics']} métricas.")
+        return redirect("experiment_import", pk=experiment.pk)
+
+    pending = {"experiment": experiment.pk, "kind": kind}
+    pending.update({key: value for key, value in result.items() if key != "next"})
+    request.session[SESSION_KEY] = pending
+
+    if result["next"] == "mapping":
+        return redirect("experiment_import_mapping", pk=experiment.pk)
+    return redirect("experiment_import_tasks", pk=experiment.pk)
+
+
 @login_required
 def import_upload(request, pk):
     experiment = get_object_or_404(Experiment, pk=pk, project__analyst=request.user)
@@ -43,23 +61,11 @@ def import_upload(request, pk):
             kind = form.cleaned_data["kind"]
             try:
                 result = start_import(experiment, kind, form.cleaned_data["file"])
-            except Exception as e:
+            except ImportValidationError as e:
                 for msg in e.messages:
                     form.add_error("file", msg)
             else:
-                if result["imported"]:
-                    messages.success(request, f"Planilha importada: {_summary_text(kind, result['summary'])}.")
-                    return redirect("experiment_import", pk=experiment.pk)
-
-                request.session[SESSION_KEY] = {
-                    "experiment": experiment.pk,
-                    "kind": kind,
-                    "stored_path": result["stored_path"],
-                    "columns": result["columns"],
-                    "mapping": result["mapping"],
-                    "missing": result["missing"],
-                }
-                return redirect("experiment_import_mapping", pk=experiment.pk)
+                return _go_to_next_step(request, experiment, kind, result)
     else:
         form = UploadForm()
 
@@ -75,8 +81,8 @@ def import_upload(request, pk):
 def import_mapping(request, pk):
     experiment = get_object_or_404(Experiment, pk=pk, project__analyst=request.user)
 
-    pending = request.session.get(SESSION_KEY)
-    if not pending or pending["experiment"] != experiment.pk:
+    pending = _pending(request, experiment)
+    if pending is None or "missing" not in pending:
         messages.error(request, "Não há nenhuma importação pendente para este experimento.")
         return redirect("experiment_import", pk=experiment.pk)
 
@@ -93,13 +99,11 @@ def import_mapping(request, pk):
         form = ColumnMappingForm(request.POST, **form_options)
         if form.is_valid():
             try:
-                summary = finish_import(experiment, kind, pending["stored_path"], form.get_mapping())
-            except Exception as e:
+                result = continue_import(experiment, kind, pending["stored_path"], form.get_mapping())
+            except ImportValidationError as e:
                 form.add_error(None, e.messages)
             else:
-                del request.session[SESSION_KEY]
-                messages.success(request, f"Planilha importada: {_summary_text(kind, summary)}.")
-                return redirect("experiment_import", pk=experiment.pk)
+                return _go_to_next_step(request, experiment, kind, result)
     else:
         form = ColumnMappingForm(**form_options)
 
@@ -107,4 +111,33 @@ def import_mapping(request, pk):
         "form": form,
         "experiment": experiment,
         "missing": pending["missing"],
+    })
+
+
+@login_required
+def import_tasks(request, pk):
+    experiment = get_object_or_404(Experiment, pk=pk, project__analyst=request.user)
+
+    pending = _pending(request, experiment)
+    if pending is None or "outputs" not in pending:
+        messages.error(request, "Não há nenhuma importação pendente para este experimento.")
+        return redirect("experiment_import", pk=experiment.pk)
+
+    form = OutputTaskForm(request.POST or None, outputs=pending["outputs"])
+    if request.method == "POST" and form.is_valid():
+        try:
+            summary = finish_test_import(experiment, pending["stored_path"], pending["mapping"], form.get_tasks())
+        except ImportValidationError as e:
+            form.add_error(None, e.messages)
+        else:
+            request.session.pop(SESSION_KEY, None)
+            messages.success(
+                request,
+                f"Planilha importada: {summary['samples']} amostras em {summary['outputs']} saída(s).",
+            )
+            return redirect("experiment_results", pk=experiment.pk)
+
+    return render(request, "experiments/import_tasks.html", {
+        "form": form,
+        "experiment": experiment,
     })

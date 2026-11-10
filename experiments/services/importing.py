@@ -12,13 +12,13 @@ from experiments.models import (
     TrainingStep,
 )
 from experiments.services.parsing import (
-    detect_task,
+    describe_outputs,
     find_metric_columns,
     find_outputs,
     match_test_columns,
     match_train_columns,
+    normalize_test,
     prepare_outputs,
-    prepare_test,
     prepare_training,
     read_table,
 )
@@ -72,15 +72,6 @@ def save_outputs(experiment, outputs):
         )
 
 
-def save_test(experiment, predictions, task):
-    rows = list(zip(
-        predictions["sample_id"],
-        predictions["true_label"],
-        predictions["predicted_label"],
-    ))
-    save_outputs(experiment, [{"name": "principal", "task": task, "rows": rows}])
-
-
 def store_upload(experiment, uploaded_file):
     return default_storage.save(f"imports/{experiment.pk}/{uploaded_file.name}", uploaded_file)
 
@@ -90,20 +81,31 @@ def load_table(stored_path):
         return read_table(f)
 
 
-def run_import(experiment, kind, df, mapping):
-    if kind == ExperimentFileType.TRAIN:
-        metric_columns = find_metric_columns(df.columns, mapping)
-        steps, metrics = prepare_training(df, mapping, metric_columns)
-        with transaction.atomic():
-            save_training(experiment, steps, metrics)
-        return {"steps": len(steps), "metrics": len(metrics)}
-
-    values = pd.concat([df[mapping["true_label"]], df[mapping["predicted_label"]]]).dropna()
-    task = detect_task(values)
-    predictions = prepare_test(df, mapping, is_regression=task == TaskType.REGR)
+def import_training(experiment, df, mapping):
+    metric_columns = find_metric_columns(df.columns, mapping)
+    steps, metrics = prepare_training(df, mapping, metric_columns)
     with transaction.atomic():
-        save_test(experiment, predictions, task)
-    return {"samples": len(predictions), "task": task}
+        save_training(experiment, steps, metrics)
+    return {"steps": len(steps), "metrics": len(metrics)}
+
+
+def _test_table(df, mapping):
+    return normalize_test(df, mapping) if mapping else df
+
+
+def continue_import(experiment, kind, stored_path, mapping, df=None):
+    if df is None:
+        df = load_table(stored_path)
+
+    if kind == ExperimentFileType.TEST:
+        return {
+            "next": "tasks",
+            "stored_path": stored_path,
+            "mapping": mapping,
+            "outputs": describe_outputs(_test_table(df, mapping)),
+        }
+
+    return {"next": "done", "summary": import_training(experiment, df, mapping)}
 
 
 def start_import(experiment, kind, uploaded_file):
@@ -111,15 +113,7 @@ def start_import(experiment, kind, uploaded_file):
     df = load_table(stored_path)
 
     if kind == ExperimentFileType.TEST and find_outputs(df):
-        outputs = prepare_outputs(df)
-        with transaction.atomic():
-            save_outputs(experiment, outputs)
-        names = ", ".join(f"{o['name']} ({o['task']})" for o in outputs)
-        return {
-            "imported": True,
-            "stored_path": stored_path,
-            "summary": {"samples": len(df), "outputs": names},
-        }
+        return continue_import(experiment, kind, stored_path, None, df)
 
     if kind == ExperimentFileType.TRAIN:
         mapping, missing = match_train_columns(df.columns, experiment.step_unit)
@@ -128,17 +122,19 @@ def start_import(experiment, kind, uploaded_file):
 
     if missing:
         return {
-            "imported": False,
+            "next": "mapping",
             "stored_path": stored_path,
             "columns": list(df.columns),
             "mapping": mapping,
             "missing": missing,
         }
 
-    summary = run_import(experiment, kind, df, mapping)
-    return {"imported": True, "stored_path": stored_path, "summary": summary}
+    return continue_import(experiment, kind, stored_path, mapping, df)
 
 
-def finish_import(experiment, kind, stored_path, mapping):
-    df = load_table(stored_path)
-    return run_import(experiment, kind, df, mapping)
+def finish_test_import(experiment, stored_path, mapping, tasks):
+    df = _test_table(load_table(stored_path), mapping)
+    outputs = prepare_outputs(df, tasks)
+    with transaction.atomic():
+        save_outputs(experiment, outputs)
+    return {"samples": len(df), "outputs": len(outputs)}
