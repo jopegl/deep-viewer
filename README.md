@@ -2,7 +2,7 @@
 
 A web application for recording and analyzing deep learning training experiments.
 
-Researchers organize their studies into **projects**, register each training run as an **experiment**, and import two spreadsheets produced by their training code (PyTorch): the **training log** (loss and metrics per epoch or iteration) and the **test set results** (true and predicted value per sample). From these, the system generates learning curves, test metrics and comparisons between experiments.
+Researchers organize their studies into **projects**, register each training run as an **experiment**, and import two spreadsheets produced by their training code (PyTorch): the **training log** (loss and metrics per epoch or iteration) and the **test set results** (true and predicted value per sample, for one or more outputs of the network). From these, the system generates learning curves, test metrics and comparisons between experiments.
 
 Developed for the **DCC061 – Software Engineering** course.
 
@@ -17,19 +17,23 @@ Developed for the **DCC061 – Software Engineering** course.
 - Landing page, sign-up, login and profile editing
 - Institution search on sign-up and profile, using the [ROR](https://ror.org) registry
 - Every page requires login; the admin panel is only available to staff users
-- Projects and experiments (classification or regression, per epoch or per iteration)
+- Projects and experiments (per epoch or per iteration), with creation and deletion
 - Import of training and test spreadsheets (CSV or Excel)
 - Automatic column recognition when the spreadsheet follows the naming convention
 - Column mapping screen when the spreadsheet uses different names
+- **Multi-output networks**: one test spreadsheet can hold several outputs (e.g. a disease class and an age), each with its own task and metrics
+- Automatic detection of each output's task (classification or regression)
 - Re-import: uploading a spreadsheet again replaces the previous data
 - Experiment dashboard:
   - training vs. validation curves for the loss and for every metric
+  - output selector for multi-output experiments
   - classification: accuracy, precision, recall, F1, confusion matrix, per-class metrics and misclassified samples
   - regression: MAE, RMSE, R², MRE, true vs. predicted plot and largest errors
 - Experiment cards with a loss preview curve
 
 **Planned**
 
+- Confirmation screen for the task of each output, with the detected task as the suggested value
 - Experiment ranking and comparison screen
 - Detailed validation of the training spreadsheet, reporting the row of each error
 - Support for decimal commas (spreadsheets exported by Excel in Portuguese)
@@ -99,10 +103,10 @@ Then open http://127.0.0.1:8000/ in your browser. Admin users can reach the admi
 
 1. Create an account and log in.
 2. Create a **project**.
-3. Inside the project, create an **experiment**, choosing its task (classification or regression) and its step unit (epoch or iteration).
+3. Inside the project, create an **experiment**, choosing its step unit (epoch or iteration).
 4. Click **Importar planilhas**, choose the spreadsheet type (train or test), select the file and click **Importar**.
 5. If the column names follow the convention below, the data is imported right away. Otherwise, the system asks you to indicate what each column means.
-6. Click **Ver dashboard** to see the curves and metrics.
+6. Click **Ver dashboard** to see the curves and metrics. For multi-output experiments, use the **Saída** selector to switch between outputs.
 
 ---
 
@@ -164,9 +168,17 @@ iteration,train_loss,val_loss
 250,0.90,
 ```
 
+**Multi-output networks:** use `train_loss` and `val_loss` for the total loss, and add the output name to the end of each output's loss and metrics. They are recognized as regular metrics:
+
+```csv
+epoch,train_loss,val_loss,train_loss_disease,val_loss_disease,train_loss_age,val_loss_age,train_accuracy_disease,val_accuracy_disease,train_mae_age,val_mae_age
+```
+
 ### Test spreadsheet
 
-One row per test set sample. The content depends on the experiment's task, and **the spreadsheet must match the task chosen when the experiment was created**. A classification spreadsheet imported into a regression experiment is rejected.
+One row per test set sample. Two formats are accepted.
+
+**Single output**
 
 | Column            | Required | Description                                                       |
 | ----------------- | -------- | ----------------------------------------------------------------- |
@@ -174,11 +186,7 @@ One row per test set sample. The content depends on the experiment's task, and *
 | `true_label`      | Yes      | True value: the class (classification) or the number (regression) |
 | `predicted_label` | Yes      | Value predicted by the model                                      |
 
-**Classification**
-
-- Labels can be text (`cat`) or numbers (`0`, `1`, `2`).
-- Labels are compared exactly, so the spelling must be identical in both columns: `cat`, `Cat` and `cat ` (with a trailing space) are three different classes.
-- Every row must have both labels filled in.
+The data is stored as one output named `principal`.
 
 ```csv
 sample_id,true_label,predicted_label
@@ -187,17 +195,53 @@ img_0002.png,dog,cat
 img_0003.png,dog,dog
 ```
 
-**Regression**
+**Multiple outputs**
 
-- `true_label` and `predicted_label` must be numbers on every row. If any cell contains text, the import is rejected and the message lists the rows with problems.
-- Samples whose true value is `0` are left out of the MRE (relative error), since the error cannot be divided by zero. The other metrics use all samples.
+`sample_id` plus one pair of columns per output: `true_<output>` and `pred_<output>`. The text after the prefix is the output name, and it must be the same in both columns.
+
+| Column          | Required            | Description                     |
+| --------------- | ------------------- | ------------------------------- |
+| `sample_id`     | Yes                 | Sample identifier               |
+| `true_<output>` | Yes, one per output | True value of that output       |
+| `pred_<output>` | Yes, one per output | Value predicted for that output |
 
 ```csv
-sample_id,true_label,predicted_label
-s0001,11.33,18.35
-s0002,36.19,38.39
-s0003,8.12,17.88
+sample_id,true_disease,pred_disease,true_age,pred_age
+img_0001.png,rust,rust,34.5,31.2
+img_0002.png,healthy,spot,52.0,49.8
+img_0003.png,spot,spot,18.0,22.1
 ```
+
+This spreadsheet creates two outputs, `disease` and `age`, each with three predictions. A cell may be left empty when a sample has no label for one of the outputs: that row is skipped for that output only.
+
+The multi-output format is used whenever the spreadsheet has at least one `true_<output>` / `pred_<output>` pair. Do not mix it with `true_label` / `predicted_label` in the same file: in that case, the `true_label` columns are ignored.
+
+**How the task of each output is detected**
+
+There is no task to choose when creating the experiment. The task of each output is detected from its values (true and predicted together):
+
+1. If there is any **text**, it is **classification**.
+2. If there are only **integers** with **at most 20 distinct values**, it is **classification** (e.g. class ids `0` to `9`).
+3. Otherwise, it is **regression**.
+
+The detection fails in a few known cases. Until the confirmation screen is implemented (see [Planned](#features)), avoid them:
+
+| Case                                                                              | Detected as    | How to avoid it                                                                                  |
+| --------------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------ |
+| Classification with more than 20 numeric class ids (e.g. CIFAR-100)               | Regression     | Export the class names instead of the ids                                                        |
+| Binary classification with the predicted **probability** (`0.87`)                 | Regression     | Export the predicted class (`0` or `1`), not the probability                                     |
+| Regression with integer targets and few distinct values (e.g. ages from 18 to 32) | Classification | Cannot be avoided yet: `34.0` also counts as an integer. This case needs the confirmation screen |
+| Regression with text in a cell (`n/a`)                                            | Classification | Remove the text or leave the cell empty                                                          |
+
+**Classification rules**
+
+- Labels can be text (`cat`) or numbers (`0`, `1`, `2`).
+- Labels are compared exactly, so the spelling must be identical in both columns: `cat`, `Cat` and `cat ` (with a trailing space) are three different classes.
+
+**Regression rules**
+
+- True and predicted values must be numbers.
+- Samples whose true value is `0` are left out of the MRE (relative error), since the error cannot be divided by zero. The other metrics use all samples.
 
 ### Checklist before importing
 
@@ -206,18 +250,21 @@ s0003,8.12,17.88
 - [ ] Decimal numbers use a dot.
 - [ ] Numeric columns have no text (`n/a`, `-`, `inf`).
 - [ ] Training and validation metrics use the same name after `train_` / `val_`.
-- [ ] The test spreadsheet matches the experiment's task (classification or regression).
+- [ ] In multi-output test spreadsheets, every `true_<output>` has a `pred_<output>` with the same name.
+- [ ] Classification outputs contain classes, not probabilities.
 - [ ] In classification, class names are spelled the same way in both columns.
 
 ### Common problems
 
-| Message or symptom                          | Cause                                                                                                                            | Fix                                                                   |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| The column mapping screen appears           | Column names do not follow the convention                                                                                        | Indicate each column on the screen, or rename the columns in the file |
-| "têm valores que não são números"           | Text in a numeric column of a regression test spreadsheet, or a classification spreadsheet imported into a regression experiment | Fix the listed rows, or create a classification experiment            |
-| The import fails on a training spreadsheet  | Decimal commas or text in numeric columns                                                                                        | Export the file with dots as decimal separator and remove the text    |
-| A metric appears twice on the dashboard     | Different names after `train_` and `val_`                                                                                        | Use the same name, e.g. `train_f1` and `val_f1`                       |
-| The confusion matrix has unexpected classes | Different spellings of the same class                                                                                            | Standardize the class names                                           |
+| Message or symptom                                                                 | Cause                                                                           | Fix                                                                   |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| The column mapping screen appears                                                  | Column names do not follow the convention                                       | Indicate each column on the screen, or rename the columns in the file |
+| The import fails on a training spreadsheet                                         | Decimal commas or text in numeric columns                                       | Export the file with dots as decimal separator and remove the text    |
+| A metric appears twice on the dashboard                                            | Different names after `train_` and `val_`                                       | Use the same name, e.g. `train_f1` and `val_f1`                       |
+| The confusion matrix has unexpected classes                                        | Different spellings of the same class                                           | Standardize the class names                                           |
+| A regression output shows a confusion matrix, or a classification output shows MAE | The task was detected wrongly                                                   | See the table of known detection failures above                       |
+| An output is missing from the selector                                             | Its `true_` and `pred_` columns have different names, or one of them is missing | Use `true_<output>` and `pred_<output>` with the same name            |
+| "A planilha precisa da coluna sample_id."                                          | Multi-output spreadsheet without a `sample_id` column                           | Rename the identifier column to `sample_id`                           |
 
 ---
 
@@ -237,12 +284,12 @@ deep-viewer/
 │   ├── admin.py
 │   └── services/
 │       ├── exceptions.py        # ImportValidationError
-│       ├── parsing.py           # spreadsheet reading and column recognition
+│       ├── parsing.py           # spreadsheet reading, column recognition and task detection
 │       └── importing.py         # saving the data to the database
 ├── analyses/                    # dashboard: metrics and charts
 │   ├── services/
 │   │   ├── metrics.py           # classification and regression metrics
-│   │   ├── ranking.py           # experiment ranking
+│   │   ├── ranking.py           # output ranking
 │   │   └── charts.py            # Plotly charts
 │   ├── templatetags/            # loss preview curve on the experiment cards
 │   └── tests/
@@ -255,23 +302,26 @@ deep-viewer/
 
 The business logic is kept separate from the views, in each app's `services/` folder:
 
-- `parsing.py` uses only pandas: it reads the file, checks the column names and the values, and splits the data into the parts that go into each table. Problems found in the spreadsheet raise `ImportValidationError`, whose messages are shown on the form;
-- `importing.py` saves that data to the database inside a transaction (either everything is saved, or nothing is);
-- `metrics.py` computes the metrics by hand; the tests compare the results with scikit-learn.
+- `parsing.py` uses pandas: it reads the file, checks the column names and the values, finds the outputs of the test spreadsheet, detects the task of each one and splits the data into the parts that go into each table. Problems found in the spreadsheet raise `ImportValidationError`, whose messages are shown on the form;
+- `importing.py` saves that data to the database inside a transaction (either everything is saved, or nothing is). Both test formats are saved by the same function, `save_outputs`;
+- `metrics.py` computes the metrics of one output by hand; the tests compare the results with scikit-learn.
 
 ### Data model
 
 ```
 User
  └── Project
-      └── Experiment
+      └── Experiment                       (step unit: epoch or iteration)
            ├── Hyperparameter
            ├── ImportedFile
-           ├── TrainingStep               (one row of the training spreadsheet)
-           │    └── StepMetric            (one metric of that row)
-           ├── ClassificationPrediction   (one row of the test spreadsheet, classification)
-           └── RegressionPrediction       (one row of the test spreadsheet, regression)
+           ├── TrainingStep                (one row of the training spreadsheet)
+           │    └── StepMetric             (one metric of that row)
+           └── Output                      (one output of the network, with its task)
+                ├── ClassificationPrediction   (one sample of a classification output)
+                └── RegressionPrediction       (one sample of a regression output)
 ```
+
+The task (classification or regression) belongs to each **output**, not to the experiment. A single-output experiment has one output named `principal`; a multi-output experiment has one output per `true_` / `pred_` pair. Each row of the test spreadsheet becomes one prediction **for each output**.
 
 ---
 
