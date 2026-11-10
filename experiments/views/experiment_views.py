@@ -4,6 +4,7 @@ from django.views.generic import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from ..forms.experiment_forms import *
+from django.urls import reverse
 
 class ExperimentListView(ListView):
     model = Experiment
@@ -23,7 +24,9 @@ class ExperimentCreateView(LoginRequiredMixin, CreateView):
     model = Experiment
     form_class = ExperimentForm
     template_name =  'experiments/experimentCreate.html'
-    success_url = reverse_lazy("experiment_list")
+
+    def get_success_url(self):
+        return reverse("experiment_list", kwargs={"pk": self.object.project.pk})
 
     def get_project(self):
         if not hasattr(self, "_project"):

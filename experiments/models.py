@@ -52,8 +52,8 @@ class TrainingStep(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name= "steps")
     step = models.IntegerField()
     train_loss = models.FloatField()
-    val_loss = models.FloatField()
-    learning_rate = models.FloatField()
+    val_loss = models.FloatField(null=True, blank=True)
+    learning_rate = models.FloatField(null=True, blank=True)
 
     def __str__(self):
                 return f"Step {self.step}"
