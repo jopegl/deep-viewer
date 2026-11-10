@@ -1,9 +1,10 @@
 from django.urls import path
 
-from .views import ProfileView, SignUpView
+from .views import ProfileView, SignUpView, institution_search
 from django.contrib.auth.decorators import login_not_required
 
 urlpatterns = [
      path("signup/", login_not_required(SignUpView.as_view()), name="signup"),
     path("profile/", ProfileView.as_view(), name="profile"),
+    path("institutions/search/", institution_search, name="institution_search"),
 ]

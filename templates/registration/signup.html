@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Criar conta | Deep Viewer{% endblock %}
 {% block body_class %}auth{% endblock %}
@@ -21,4 +22,5 @@
 
     <p class="auth-switch">Já tem conta? <a href="{% url 'login' %}">Entrar</a></p>
   </div>
+  <script src="{% static 'js/institutions.js' %}" defer></script>
 {% endblock %}

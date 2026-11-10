@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Meu perfil | Deep Viewer{% endblock %}
 {% block page_class %}page-narrow{% endblock %}
@@ -19,4 +20,5 @@
       <a class="btn btn-ghost" href="{% url 'project_list' %}">Meus projetos</a>
     </div>
   </form>
+  <script src="{% static 'js/institutions.js' %}" defer></script>
 {% endblock %}

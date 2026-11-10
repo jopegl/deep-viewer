@@ -10,6 +10,11 @@ from django.shortcuts import redirect
 from .forms import SignUpForm, ProfileForm
 from django.shortcuts import render
 
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+from .services.institutions import search_institutions
+
 @login_not_required
 def landing(request):
     if request.user.is_authenticated:
@@ -34,6 +39,11 @@ def admin_login(request):
     if request.user.is_staff:
         return redirect("admin:index")
     raise Http404
+
+@login_not_required
+@require_GET
+def institution_search(request):
+    return JsonResponse({"results": search_institutions(request.GET.get("q", ""))})
 
 
 class SignUpView(CreateView):

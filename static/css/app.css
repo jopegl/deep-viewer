@@ -1304,3 +1304,67 @@ code {
   width: 16px;
   height: 16px;
 }
+
+.form input[data-institution-search] {
+  padding-left: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238fa39a' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 14px 50%;
+  background-size: 16px;
+}
+
+.form input[data-institution-search].is-chosen {
+  border-color: var(--green);
+}
+
+.autocomplete {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.7);
+}
+
+.autocomplete-list[hidden] {
+  display: none;
+}
+
+.autocomplete-list li {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.autocomplete-list li small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.autocomplete-list li:hover,
+.autocomplete-list li.is-active {
+  background: var(--green-soft);
+}
+
+.autocomplete-list .autocomplete-empty {
+  color: var(--faint);
+  cursor: default;
+}
+
+.autocomplete-list .autocomplete-empty:hover {
+  background: none;
+}
