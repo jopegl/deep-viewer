@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Excluir {{ object.name }} | Deep Viewer{% endblock %}
+{% block page_class %}page-narrow{% endblock %}
+
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <a href="{% url 'experiment_list' object.project.pk %}">{{ object.project.name }}</a>
+    <span>/</span>
+    <span>Excluir</span>
+  </nav>
+
+  <div class="page-head">
+    <div>
+      <h1>Excluir experimento</h1>
+      <p class="lead">Tem certeza que deseja excluir <strong>{{ object.name }}</strong>? Isso não pode ser desfeito.</p>
+    </div>
+  </div>
+
+  <form method="post" class="form-card danger-card">
+    {% csrf_token %}
+    <div class="hint-box">
+      <span>Serão apagados junto:</span>
+      <span><strong>{{ object.steps.count }}</strong> passos de treino e suas métricas</span>
+      <span><strong>{{ object.classi_preds.count|add:object.regr_preds.count }}</strong> amostras de teste</span>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-danger">Excluir experimento</button>
+      <a class="btn btn-ghost" href="{% url 'experiment_list' object.project.pk %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

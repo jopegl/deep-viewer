@@ -5,6 +5,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from ..forms.experiment_forms import *
 from django.urls import reverse
+from django.contrib import messages
+from django.views.generic import DeleteView
+
 
 class ExperimentListView(ListView):
     model = Experiment
@@ -58,3 +61,20 @@ class ExperimentDeleteView(LoginRequiredMixin, DeleteView):
   model = Experiment
   template_name = "experiments/experimentConfirmDelete.html"
   success_url = reverse_lazy("experiment_list")
+
+
+
+
+class ExperimentDeleteView(LoginRequiredMixin, DeleteView):
+    model = Experiment
+    template_name = "experiments/experimentConfirmDelete.html"
+
+    def get_queryset(self):
+        return Experiment.objects.filter(project__analyst=self.request.user)
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Experimento "{self.object.name}" excluído.')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("experiment_list", kwargs={"pk": self.object.project_id})

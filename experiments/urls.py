@@ -30,6 +30,10 @@ urlpatterns = [
           experiment_views.ExperimentCreateView.as_view(),
           name="experiment_create"),
 
+     path("experiments/<int:pk>/delete/", 
+          experiment_views.ExperimentDeleteView.as_view(), 
+          name="experiment_delete"),
+
      path("experiments/<int:pk>/import/", import_views.import_upload, name="experiment_import"),
 
      path("experiments/<int:pk>/import/columns/", import_views.import_mapping, name="experiment_import_mapping"),

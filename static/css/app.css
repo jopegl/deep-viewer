@@ -1294,3 +1294,13 @@ code {
     display: none;
   }
 }
+
+.exp-actions .btn-icon {
+  flex: none;
+  padding: 0 12px;
+}
+
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
