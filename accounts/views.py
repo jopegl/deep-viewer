@@ -8,6 +8,13 @@ from django.contrib.auth.views import redirect_to_login
 from django.http import Http404
 from django.shortcuts import redirect
 from .forms import SignUpForm, ProfileForm
+from django.shortcuts import render
+
+@login_not_required
+def landing(request):
+    if request.user.is_authenticated:
+        return redirect("project_list")
+    return render(request, "landing.html")
 
 
 @login_not_required

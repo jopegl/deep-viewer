@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Deep Viewer | Entenda seus treinos{% endblock %}
+{% block page_class %}landing{% endblock %}
+
+{% block content %}
+  <header class="landing-nav">
+    <a class="brand" href="{% url 'landing' %}">
+      {% include "partials/logo.html" %}
+      Deep Viewer
+    </a>
+    <nav class="landing-links">
+      <a class="btn btn-ghost btn-sm" href="{% url 'login' %}">Entrar</a>
+      <a class="btn btn-primary btn-sm" href="{% url 'signup' %}">Criar conta</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">Análise de experimentos de deep learning</span>
+      <h1>Veja o que acontece dentro do seu treino.</h1>
+      <p class="lead">
+        Importe as planilhas de treino e teste dos seus modelos e acompanhe curvas de loss,
+        métricas e erros em um só lugar. Compare experimentos e descubra qual modelo vale a pena.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'signup' %}">Começar agora</a>
+        <a class="btn btn-ghost" href="{% url 'login' %}">Já tenho conta</a>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="hero-card">
+        <div class="hero-card-head">
+          <div>
+            <strong>resnet18-folhas</strong>
+            <span>Classificação · 25 épocas</span>
+          </div>
+          <div class="exp-curve-legend">
+            <span>Treino</span>
+            <span class="legend-val">Validação</span>
+          </div>
+        </div>
+        <svg class="hero-chart" viewBox="0 0 520 220">
+          <g class="hero-grid">
+            <line x1="0" y1="55" x2="520" y2="55"/>
+            <line x1="0" y1="110" x2="520" y2="110"/>
+            <line x1="0" y1="165" x2="520" y2="165"/>
+          </g>
+          <path class="hero-val" pathLength="1" d="M0 30 C 70 105, 150 140, 250 150 S 420 152 520 158"/>
+          <path class="hero-train" pathLength="1" d="M0 22 C 70 110, 150 160, 260 178 S 430 196 520 200"/>
+          <circle class="hero-dot" cx="372" cy="151" r="6"/>
+        </svg>
+        <div class="hero-kpis">
+          <div><span>Acurácia</span><strong>0.9733</strong></div>
+          <div><span>F1</span><strong>0.9701</strong></div>
+          <div><span>Melhor época</span><strong>18</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <article class="feature">
+      <h3>Curvas de treino</h3>
+      <p>Loss e métricas por época ou por iteração, com treino e validação lado a lado para identificar overfitting.</p>
+    </article>
+    <article class="feature">
+      <h3>Resultados de teste</h3>
+      <p>Matriz de confusão e métricas por classe na classificação. MAE, RMSE, R² e real x predito na regressão.</p>
+    </article>
+    <article class="feature">
+      <h3>Ranking de experimentos</h3>
+      <p>Organize os experimentos em projetos e descubra qual arquitetura teve o melhor desempenho.</p>
+    </article>
+  </section>
+
+  <section class="steps">
+    <h2>Como funciona</h2>
+    <ol class="steps-list">
+      <li>
+        <span class="step-num">1</span>
+        <div>
+          <h3>Crie um projeto</h3>
+          <p>Agrupe os experimentos de uma mesma pesquisa.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div>
+          <h3>Importe as planilhas</h3>
+          <p>CSV ou Excel com o log do treino e as predições do teste.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div>
+          <h3>Analise e compare</h3>
+          <p>Gráficos e métricas são calculados na hora.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="cta">
+    <h2>Pronto para entender seus modelos?</h2>
+    <a class="btn btn-primary" href="{% url 'signup' %}">Criar conta grátis</a>
+  </section>
+
+  <footer class="landing-footer">Deep Viewer · Projeto de Engenharia de Software</footer>
+{% endblock %}

@@ -53,7 +53,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
 ]
 
-LOGIN_URL = "login"
+LOGIN_URL = "landing"
 LOGIN_REDIRECT_URL = "project_list"
 LOGOUT_REDIRECT_URL = "login"
 

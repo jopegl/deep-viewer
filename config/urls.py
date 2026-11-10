@@ -1,8 +1,10 @@
 from django.contrib import admin
 from django.urls import path, include
 from accounts.views import admin_redirect
+from accounts.views import admin_redirect, landing
 
 urlpatterns = [
+    path("", landing, name="landing"),
     path("admin/login/", admin_redirect),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
