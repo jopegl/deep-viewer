@@ -32,6 +32,11 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
     template_name = "projects/projectsCreate.html"
     success_url = reverse_lazy("project_list")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["analyst"] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         form.instance.analyst = self.request.user
         return super().form_valid(form)
@@ -42,6 +47,11 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ProjectForm
     template_name = "projects/projectUpdate.html"
     success_url = reverse_lazy("project_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["analyst"] = self.request.user
+        return kwargs
 
     def get_queryset(self):
         return Project.objects.filter(analyst=self.request.user)

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class SplitType(models.TextChoices):
@@ -28,6 +29,15 @@ class Project(models.Model):
     analyst = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Lower("name"),
+                "analyst",
+                name="unique_project_name_per_analyst",
+            )
+        ]
+
     def __str__(self):
         return self.name
 
@@ -39,6 +49,15 @@ class Experiment(models.Model):
     notes = models.TextField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     step_unit = models.CharField(max_length=15, choices=StepUnit.choices, default=StepUnit.EPOCH)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Lower("name"),
+                "project",
+                name="unique_experiment_name_per_project",
+            )
+        ]
 
     def __str__(self):
         if self.architecture:

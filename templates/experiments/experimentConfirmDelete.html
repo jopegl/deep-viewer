@@ -24,7 +24,7 @@
     <div class="hint-box">
       <span>Serão apagados junto:</span>
       <span><strong>{{ object.steps.count }}</strong> passos de treino e suas métricas</span>
-      <span><strong>{{ object.classi_preds.count|add:object.regr_preds.count }}</strong> amostras de teste</span>
+      <span><strong>{{ object.test_sample_count }}</strong> amostras de teste</span>
     </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-danger">Excluir experimento</button>

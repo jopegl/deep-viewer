@@ -51,6 +51,10 @@ class ExperimentCreateView(LoginRequiredMixin, CreateView):
         form.instance.project = self.get_project()
         return super().form_valid(form)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.get_project()
+        return kwargs
 
 class ExperimentUpdateView(LoginRequiredMixin, UpdateView):
     model = Experiment
