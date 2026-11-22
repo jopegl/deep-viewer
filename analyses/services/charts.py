@@ -4,9 +4,9 @@ import math
 import pandas as pd
 import plotly.graph_objects as go
 
-from experiments.models import StepMetric, StepUnit, TaskType
+from experiments.models import StepMetric, StepUnit
 
-from .metrics import confusion_matrix, load_predictions
+from .metrics import confusion_matrix
 
 
 ANIMATE_JS = """
@@ -161,13 +161,7 @@ def compare_training_curves(experiments, metric="loss", split="val"):
     return _to_html(fig, animate=True)
 
 
-def confusion_matrix_chart(output):
-    if output.task != TaskType.CLASSIF:
-        return None
-    df = load_predictions(output)
-    if df.empty:
-        return None
-
+def confusion_matrix_chart(df):
     labels, matrix = confusion_matrix(df["true_label"], df["predicted_label"])
     fig = go.Figure(go.Heatmap(
         z=matrix,
@@ -183,13 +177,7 @@ def confusion_matrix_chart(output):
     return _to_html(fig)
 
 
-def true_vs_predicted_chart(output):
-    if output.task != TaskType.REGR:
-        return None
-    df = load_predictions(output)
-    if df.empty:
-        return None
-
+def true_vs_predicted_chart(df):
     low = min(df["true_label"].min(), df["predicted_label"].min())
     high = max(df["true_label"].max(), df["predicted_label"].max())
 

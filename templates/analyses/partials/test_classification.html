@@ -1,0 +1,85 @@
+<div class="kpis">
+  <div class="kpi kpi-main">
+    <div class="kpi-label">Acurácia</div>
+    <div class="kpi-value">{{ test_metrics.accuracy|floatformat:4 }}</div>
+    <div class="kpi-hint">Acertos sobre o total</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Precisão</div>
+    <div class="kpi-value">{{ test_metrics.precision|floatformat:4 }}</div>
+    <div class="kpi-hint">Média entre as classes</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Recall</div>
+    <div class="kpi-value">{{ test_metrics.recall|floatformat:4 }}</div>
+    <div class="kpi-hint">Média entre as classes</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">F1</div>
+    <div class="kpi-value">{{ test_metrics.f1|floatformat:4 }}</div>
+    <div class="kpi-hint">Média entre as classes</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Matriz de confusão</h3>
+    </div>
+    <div class="chart chart-fade">{{ test_chart|safe }}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Por classe</h3>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Classe</th>
+          <th class="num">Precisão</th>
+          <th class="num">Recall</th>
+          <th class="num">F1</th>
+          <th class="num">Amostras</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in test_metrics.per_class %}
+          <tr>
+            <td class="strong">{{ c.label }}</td>
+            <td class="num">{{ c.precision|floatformat:3 }}</td>
+            <td class="num">{{ c.recall|floatformat:3 }}</td>
+            <td class="num">{{ c.f1|floatformat:3 }}</td>
+            <td class="num">{{ c.support }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if worst_errors %}
+  <div class="panel section">
+    <div class="panel-head">
+      <h3>Amostras classificadas errado</h3>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Amostra</th>
+          <th>Classe real</th>
+          <th>Classe predita</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in worst_errors %}
+          <tr>
+            <td>{{ e.sample_id }}</td>
+            <td>{{ e.true_label }}</td>
+            <td class="table-error">{{ e.predicted_label }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

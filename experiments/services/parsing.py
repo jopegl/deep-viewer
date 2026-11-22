@@ -1,7 +1,8 @@
 import pandas as pd
 
-from experiments.services.exceptions import ImportValidationError
 from experiments.models import TaskType
+from experiments.services.exceptions import ImportValidationError
+from experiments.services.tasks import get_task
 
 TRAIN_FIELDS = {
     "step": "Passo (época ou iteração)",
@@ -147,44 +148,21 @@ def describe_outputs(df):
     return outputs
 
 
-def _labels(series):
-    numeric = pd.to_numeric(series, errors="coerce")
-    if numeric.notna().all() and (numeric % 1 == 0).all():
-        return numeric.astype("int64").astype(str)
-    return series.astype(str).str.strip()
-
-
-def _numbers(part, column, output_name, label):
-    numbers = pd.to_numeric(part[column], errors="coerce")
-    invalid = numbers.isna()
-    if invalid.any():
-        lines = ", ".join(str(i + 2) for i in part.index[invalid.to_numpy()][:5])
-        raise ImportValidationError([
-            f"A saída '{output_name}' foi marcada como regressão, mas o {label} "
-            f"tem valores que não são números (linhas {lines})."
-        ])
-    return numbers
-
-
 def prepare_outputs(df, tasks):
     sample_col = _sample_column(df)
     outputs = []
     for name, true_col, pred_col in find_outputs(df):
         if name not in tasks:
             continue
-        task = tasks[name]
         filled = df[true_col].notna() & df[pred_col].notna()
         part = df[filled]
         sample_ids = part[sample_col].astype(str).str.strip()
-        if task == TaskType.REGR:
-            true_values = _numbers(part, true_col, name, "valor real")
-            pred_values = _numbers(part, pred_col, name, "valor predito")
-        else:
-            true_values = _labels(part[true_col])
-            pred_values = _labels(part[pred_col])
+        strategy = get_task(tasks[name])
+        true_values = strategy.convert(part[true_col], name, "valor real")
+        pred_values = strategy.convert(part[pred_col], name, "valor predito")
         outputs.append({
             "name": name,
-            "task": task,
+            "task": tasks[name],
             "rows": list(zip(sample_ids, true_values, pred_values)),
         })
     return outputs

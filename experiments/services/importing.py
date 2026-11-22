@@ -3,12 +3,9 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 
 from experiments.models import (
-    ClassificationPrediction,
     ExperimentFileType,
     Output,
-    RegressionPrediction,
     StepMetric,
-    TaskType,
     TrainingStep,
 )
 from experiments.services.parsing import (
@@ -22,6 +19,7 @@ from experiments.services.parsing import (
     prepare_training,
     read_table,
 )
+from experiments.services.tasks import get_task
 
 BATCH_SIZE = 2000
 
@@ -65,9 +63,9 @@ def save_outputs(experiment, outputs):
     experiment.outputs.all().delete()
     for data in outputs:
         output = Output.objects.create(experiment=experiment, name=data["name"], task=data["task"])
-        model = RegressionPrediction if data["task"] == TaskType.REGR else ClassificationPrediction
-        model.objects.bulk_create(
-            [model(output=output, sample_id=s, true_label=t, predicted_label=p) for s, t, p in data["rows"]],
+        strategy = get_task(data["task"])
+        strategy.prediction_model.objects.bulk_create(
+            strategy.build_predictions(output, data["rows"]),
             batch_size=BATCH_SIZE,
         )
 

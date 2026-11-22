@@ -1,15 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
-from experiments.models import Experiment, TaskType
+from experiments.models import Experiment
 
-from .services.charts import (
-    confusion_matrix_chart,
-    training_curve,
-    training_metric_names,
-    true_vs_predicted_chart,
-)
-from .services.metrics import output_metrics, worst_errors
+from .services.charts import training_curve, training_metric_names
+from .services.tasks import get_analysis
 
 
 @login_required
@@ -25,14 +20,7 @@ def experiment_results(request, pk):
     selected_output = request.GET.get("output")
     output = next((o for o in outputs if o.name == selected_output), outputs[0] if outputs else None)
 
-    is_regression = output is not None and output.task == TaskType.REGR
-    test_metrics = None
-    test_chart = None
-    errors = []
-    if output is not None:
-        test_metrics = output_metrics(output)
-        test_chart = true_vs_predicted_chart(output) if is_regression else confusion_matrix_chart(output)
-        errors = worst_errors(output)
+    analysis = get_analysis(output.task).analyze(output) if output is not None else None
 
     return render(request, "analyses/experiment_results.html", {
         "experiment": experiment,
@@ -41,8 +29,8 @@ def experiment_results(request, pk):
         "training_chart": training_curve(experiment, selected_metric),
         "outputs": outputs,
         "output": output,
-        "is_regression": is_regression,
-        "test_metrics": test_metrics,
-        "test_chart": test_chart,
-        "worst_errors": errors,
+        "test_metrics": analysis["metrics"] if analysis else None,
+        "test_chart": analysis["chart"] if analysis else None,
+        "worst_errors": analysis["worst_errors"] if analysis else [],
+        "test_template": analysis["template_name"] if analysis else None,
     })

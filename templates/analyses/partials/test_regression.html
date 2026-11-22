@@ -1,0 +1,63 @@
+<div class="kpis">
+  <div class="kpi kpi-main">
+    <div class="kpi-label">MAE</div>
+    <div class="kpi-value">{{ test_metrics.mae|floatformat:4 }}</div>
+    <div class="kpi-hint">Erro absoluto médio</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">RMSE</div>
+    <div class="kpi-value">{{ test_metrics.rmse|floatformat:4 }}</div>
+    <div class="kpi-hint">Pesa mais os erros grandes</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">R²</div>
+    <div class="kpi-value">{{ test_metrics.r2|floatformat:4 }}</div>
+    <div class="kpi-hint">1 é o ajuste perfeito</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">MRE</div>
+    <div class="kpi-value">
+      {% if test_metrics.mre is not None %}
+        {{ test_metrics.mre|floatformat:4 }}
+      {% else %}
+        -
+      {% endif %}
+    </div>
+    <div class="kpi-hint">Erro relativo ao valor real</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Real x predito</h3>
+    </div>
+    <div class="chart">{{ test_chart|safe }}</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Maiores erros</h3>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Amostra</th>
+          <th class="num">Real</th>
+          <th class="num">Predito</th>
+          <th class="num">Erro</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in worst_errors %}
+          <tr>
+            <td>{{ e.sample_id }}</td>
+            <td class="num">{{ e.true_label|floatformat:2 }}</td>
+            <td class="num">{{ e.predicted_label|floatformat:2 }}</td>
+            <td class="num table-error">{{ e.error|floatformat:2 }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

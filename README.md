@@ -288,15 +288,18 @@ deep-viewer/
 │   └── services/
 │       ├── exceptions.py        # ImportValidationError
 │       ├── parsing.py           # spreadsheet reading, column recognition and task suggestion
-│       └── importing.py         # saving the data to the database
+│       ├── tasks.py             # import strategy of each task (Strategy)
+│       └── importing.py         # saving the data to the database (Facade)
 ├── analyses/                    # dashboard: metrics and charts
 │   ├── services/
 │   │   ├── metrics.py           # classification and regression metrics
+│   │   ├── tasks.py             # analysis strategy of each task (Strategy)
 │   │   ├── ranking.py           # output ranking
 │   │   └── charts.py            # Plotly charts
 │   ├── templatetags/            # loss preview curve on the experiment cards
-│   └── tests/
+│   └── tests.py
 ├── templates/                   # HTML templates for all screens
+│   └── analyses/partials/       # test results layout of each task
 ├── static/                      # CSS and JavaScript
 ├── media/                       # uploaded spreadsheets (not versioned)
 ├── manage.py
@@ -341,11 +344,47 @@ The task (classification or regression) belongs to each **output**, not to the e
 
 ---
 
+## Architecture and design patterns
+
+### Architecture
+
+Deep Viewer is a **monolith** built on Django, which follows the **MVC Web** style (in Django terms, MTV: Model, Template, View). On top of it, the code is organized in **layers**, and each layer only calls the one below it:
+
+```
+ Templates          what the user sees (HTML)
+     ↑
+ Views and forms    web concerns: forms, session, redirects
+     ↓
+ Services           business rules: reading spreadsheets, validating, computing metrics, charts
+     ↓
+ Models             database entities (Django ORM, SQLite)
+```
+
+The views never read a spreadsheet or compute a metric: they call a service and render the result. This keeps the rules testable without a browser, and lets the screens change without touching the rules.
+
+The project is split into three Django apps, with dependencies in one direction only: `analyses` → `experiments` → `accounts`. `experiments` stores and imports the data; `analyses` only reads it to compute metrics and draw charts.
+
+### Design patterns
+
+| Pattern | Where | Why it is there |
+| --- | --- | --- |
+| **Strategy** | `experiments/services/tasks.py`, `analyses/services/tasks.py` | Classification and regression differ in how values are converted, where predictions are stored, which metrics, chart, worst errors and screen layout are used. Each task is a class, so the rest of the code never asks "is this classification or regression?". A new task (e.g. segmentation) means a new pair of classes, not changes spread over the code |
+| **Template Method** | `AnalysisStrategy.analyze()`, `FilterForm.filter()`, Django class-based views | The base class fixes the steps of an algorithm (load → compute metrics → chart → worst errors; validate → filter → order) and the subclasses fill in only the steps that change |
+| **Facade** | `experiments/services/importing.py` | The views call three functions (`start_import`, `continue_import`, `finish_test_import`) that hide file storage, parsing, validation, the transaction and the writes to several tables |
+| **Adapter** | `normalize_test`, `read_table`, `accounts/services/institutions.py` | Converts different inputs into the interface the system expects: the old single-output spreadsheet into the multi-output format, CSV and Excel files into one DataFrame, and the ROR API response into `{name, country}` |
+
+Patterns are used only where the code is expected to change; the rest is kept simple, to avoid overengineering.
+
+---
+
 ## Tests
 
 ```bash
 python manage.py test
 ```
+
+- `analyses/tests.py`: the metrics are checked against hand calculations and against scikit-learn; the analysis strategies and the ranking are tested on their own and with the database.
+- `experiments/tests.py`: the import strategies, the spreadsheet parsing, the whole import flow (upload, confirmation screen, saved data), access control between users and the project search.
 
 ---
 

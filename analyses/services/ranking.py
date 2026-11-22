@@ -1,35 +1,17 @@
-from experiments.models import Output, TaskType
+from experiments.models import Output
 
-from .metrics import output_metrics
-
-
-RANKING_METRICS = {
-    TaskType.CLASSIF: {
-        "accuracy": "Acurácia",
-        "f1": "F1 (macro)",
-        "precision": "Precisão (macro)",
-        "recall": "Recall (macro)",
-    },
-    TaskType.REGR: {
-        "mae": "MAE",
-        "rmse": "RMSE",
-        "r2": "R²",
-        "mre": "MRE",
-    },
-}
-
-
-LOWER_IS_BETTER = {"mae", "rmse", "mre"}
+from .tasks import get_analysis
 
 
 def rank_experiments(project, task, metric, output_name=None):
+    analysis = get_analysis(task)
     outputs = Output.objects.filter(experiment__project=project, task=task).select_related("experiment")
     if output_name:
         outputs = outputs.filter(name=output_name)
 
     rows = []
     for output in outputs:
-        metrics = output_metrics(output)
+        metrics = analysis.output_metrics(output)
         if metrics is None or metrics[metric] is None:
             continue
         rows.append({
@@ -39,7 +21,7 @@ def rank_experiments(project, task, metric, output_name=None):
             "metrics": metrics,
         })
 
-    rows.sort(key=lambda row: row["value"], reverse=metric not in LOWER_IS_BETTER)
+    rows.sort(key=lambda row: row["value"], reverse=metric not in analysis.lower_is_better)
     for position, row in enumerate(rows, start=1):
         row["position"] = position
     return rows
