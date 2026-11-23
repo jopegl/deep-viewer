@@ -1,7 +1,7 @@
 from django import forms
 from django.db.models import Q
 
-from ..models import StepUnit, TaskType
+from ..models import Experiment, StepUnit, TaskType
 
 
 class FilterForm(forms.Form):
@@ -57,9 +57,9 @@ class ProjectFilterForm(FilterForm):
 
 
 class ExperimentFilterForm(FilterForm):
-    filter_fields = ("q", "task", "unit")
+    filter_fields = ("q", "task", "unit", "group", "fold")
 
-    q = search_field("Buscar por nome, arquitetura ou notas")
+    q = search_field("Buscar por nome, grupo, arquitetura ou notas")
     task = select_field("Tarefa", [
         ("", "Todas as tarefas"),
         (TaskType.CLASSIF, "Classificação"),
@@ -67,18 +67,46 @@ class ExperimentFilterForm(FilterForm):
         ("none", "Sem teste importado"),
     ])
     unit = select_field("Unidade", [("", "Época e iteração")] + list(StepUnit.choices))
+    group = select_field("Grupo", [])
+    fold = select_field("Fold", [])
     order = select_field("Ordenar", [
         ("-created_at", "Mais recentes"),
         ("created_at", "Mais antigos"),
         ("name", "Nome (A a Z)"),
     ])
 
+    def __init__(self, data=None, project=None):
+        super().__init__(data)
+        experiments = project.experiments.all() if project else Experiment.objects.none()
+        groups = sorted(set(experiments.exclude(group_name="").values_list("group_name", flat=True)), key=str.lower)
+        folds = sorted(set(experiments.exclude(fold=None).values_list("fold", flat=True)))
+
+        if groups:
+            self.fields["group"].choices = (
+                [("", "Todos os grupos")] + [(name, name) for name in groups] + [("none", "Sem grupo")]
+            )
+        else:
+            del self.fields["group"]
+
+        if folds:
+            self.fields["fold"].choices = [("", "Todos os folds")] + [(str(n), f"Fold {n}") for n in folds]
+        else:
+            del self.fields["fold"]
+
     def apply_filters(self, queryset, data):
         q = data["q"].strip()
         if q:
             queryset = queryset.filter(
                 Q(name__icontains=q) | Q(architecture__icontains=q) | Q(notes__icontains=q)
+                | Q(group_name__icontains=q)
             )
+        group = data.get("group")
+        if group == "none":
+            queryset = queryset.filter(group_name="")
+        elif group:
+            queryset = queryset.filter(group_name__iexact=group)
+        if data.get("fold"):
+            queryset = queryset.filter(fold=int(data["fold"]))
         if data["unit"]:
             queryset = queryset.filter(step_unit=data["unit"])
         if data["task"] == "none":

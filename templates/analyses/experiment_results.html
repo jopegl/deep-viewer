@@ -22,6 +22,12 @@
           {% endif %}
         {% endwith %}
         <span class="tag">Por {{ experiment.get_step_unit_display|lower }}</span>
+        {% if experiment.group_name %}
+          <span class="tag">{{ experiment.group_name }}</span>
+        {% endif %}
+        {% if experiment.fold is not None %}
+          <span class="tag">Fold {{ experiment.fold }}</span>
+        {% endif %}
         {% if experiment.architecture %}
           <span class="tag">{{ experiment.architecture }}</span>
         {% endif %}

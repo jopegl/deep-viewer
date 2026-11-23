@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Novo experimento | Deep Viewer{% endblock %}
 {% block page_class %}page-narrow{% endblock %}
@@ -27,4 +28,6 @@
       <a class="btn btn-ghost" href="{% url 'experiment_list' project.pk %}">Cancelar</a>
     </div>
   </form>
+  {{ form.group_options|json_script:"group-options" }}
+  <script src="{% static 'js/groups.js' %}" defer></script>
 {% endblock %}

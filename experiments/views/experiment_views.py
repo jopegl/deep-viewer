@@ -1,5 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Case, F, IntegerField, Value, When
+from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
@@ -16,14 +18,19 @@ class ExperimentListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         self.project = get_object_or_404(Project, pk=self.kwargs["pk"], analyst=self.request.user)
-        self.filter_form = ExperimentFilterForm(self.request.GET)
-        return self.filter_form.filter(self.project.experiments.all())
+        self.filter_form = ExperimentFilterForm(self.request.GET, project=self.project)
+        queryset = self.filter_form.filter(self.project.experiments.all())
+        without_group = Case(When(group_name="", then=Value(1)), default=Value(0), output_field=IntegerField())
+        return queryset.order_by(
+            without_group, Lower("group_name"), F("fold").asc(nulls_last=True), *queryset.query.order_by
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.project
         context["filter_form"] = self.filter_form
         context["total_count"] = self.project.experiments.count()
+        context["has_groups"] = self.project.experiments.exclude(group_name="").exists()
         return context
 
 

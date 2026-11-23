@@ -416,6 +416,29 @@ code {
   gap: 18px;
 }
 
+.exp-group + .exp-group {
+  margin-top: 36px;
+}
+
+.exp-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.exp-group-head h2 {
+  font-size: 18px;
+}
+
+.exp-group-head span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .exp-card {
   display: flex;
   flex-direction: column;
@@ -1344,7 +1367,8 @@ code {
   background-size: 16px;
 }
 
-.form input[data-institution-search].is-chosen {
+.form input[data-institution-search].is-chosen,
+.form input[data-group-options].is-chosen {
   border-color: var(--green);
 }
 

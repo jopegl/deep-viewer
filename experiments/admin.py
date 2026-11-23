@@ -49,9 +49,9 @@ class OutputInline(admin.TabularInline):
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ("name", "project", "step_unit", "architecture", "created_at")
+    list_display = ("name", "project", "group_name", "fold", "step_unit", "architecture", "created_at")
     list_filter = ("step_unit", "project")
-    search_fields = ("name", "architecture", "notes")
+    search_fields = ("name", "group_name", "architecture", "notes")
     readonly_fields = ("created_at",)
     list_select_related = ("project",)
     inlines = [OutputInline, HyperparameterInline, ImportedFileInline]

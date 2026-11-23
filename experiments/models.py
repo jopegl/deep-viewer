@@ -49,6 +49,8 @@ class Experiment(models.Model):
     notes = models.TextField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     step_unit = models.CharField(max_length=15, choices=StepUnit.choices, default=StepUnit.EPOCH)
+    group_name = models.CharField(max_length=100, blank=True)
+    fold = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -56,7 +58,14 @@ class Experiment(models.Model):
                 Lower("name"),
                 "project",
                 name="unique_experiment_name_per_project",
-            )
+            ),
+            models.UniqueConstraint(
+                Lower("group_name"),
+                "fold",
+                "project",
+                condition=models.Q(fold__isnull=False),
+                name="unique_fold_per_group",
+            ),
         ]
 
     def __str__(self):

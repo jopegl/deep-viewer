@@ -30,6 +30,7 @@ Developed for the **DCC061 – Software Engineering** course.
   - classification: accuracy, precision, recall, F1, confusion matrix, per-class metrics and misclassified samples
   - regression: MAE, RMSE, R², MRE, true vs. predicted plot and largest errors
 - Experiment cards with a loss preview curve
+- **Groups and folds**: experiments can belong to a group (e.g. the folds of a cross-validation) and have a fold number; the project page shows one section per group with the folds in order, and can filter by group and fold. The group field lists the existing groups (with how many experiments each has) and offers to create a new one, so typos do not split a group. Names like `EfficientNet CV1 Fold 3` fill the group and the fold automatically
 - **Experiment comparison**: ranking of the project's experiments by any test metric (task, metric and output selectable), with a bar chart and the best result highlighted
 - **CSV export**: the metrics of every output and the predictions of each output can be downloaded from the dashboard; the predictions file uses the same columns as the test spreadsheet
 
@@ -103,7 +104,7 @@ Then open http://127.0.0.1:8000/ in your browser. Admin users can reach the admi
 
 1. Create an account and log in.
 2. Create a **project**.
-3. Inside the project, create an **experiment**, choosing its step unit (epoch or iteration).
+3. Inside the project, create an **experiment**, choosing its step unit (epoch or iteration). For cross-validation, give each fold the same **Grupo** and its **Fold** number, or simply name it like `EfficientNet CV1 Fold 3`.
 4. Click **Importar planilhas**, choose the spreadsheet type (train or test), select the file and click **Importar**.
 5. If the column names follow the convention below, the system recognizes them on its own. Otherwise, it asks you to indicate what each column means.
 6. For **test** spreadsheets, a confirmation screen lists each output with a suggested task (classification or regression) and a few example values. Check the suggestion, change it if needed and click **Importar**. Training spreadsheets skip this step.
@@ -290,6 +291,7 @@ deep-viewer/
 │   ├── admin.py
 │   └── services/
 │       ├── exceptions.py        # ImportValidationError
+│       ├── folds.py             # reads the group and the fold from names like "ResNet CV1 Fold 3"
 │       ├── parsing.py           # spreadsheet reading, column recognition and task suggestion
 │       ├── tasks.py             # import strategy of each task (Strategy)
 │       └── importing.py         # saving the data to the database (Facade)
@@ -334,7 +336,7 @@ Between screens, the uploaded file is kept on disk and the pending import is kep
 ```
 User
  └── Project
-      └── Experiment                       (step unit: epoch or iteration)
+      └── Experiment                       (step unit, optional group and fold)
            ├── Hyperparameter
            ├── ImportedFile
            ├── TrainingStep                (one row of the training spreadsheet)
@@ -388,7 +390,7 @@ python manage.py test
 ```
 
 - `analyses/tests.py`: the metrics are checked against hand calculations and against scikit-learn; the analysis strategies and the ranking are tested on their own and with the database; the comparison page is tested for ordering, filters, fallbacks and access control; the CSV exports are tested for their content, file name and access control.
-- `experiments/tests.py`: the import strategies, the spreadsheet parsing, the whole import flow (upload, confirmation screen, saved data), access control between users and the project search.
+- `experiments/tests.py`: the import strategies, the spreadsheet parsing, the whole import flow (upload, confirmation screen, saved data), access control between users, the project search, and groups and folds (reading them from the name, duplicate folds, grouped list, and the filter).
 
 ---
 
