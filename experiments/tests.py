@@ -9,7 +9,6 @@ from django.urls import reverse
 
 from .models import ClassificationPrediction, Experiment, Project, RegressionPrediction, StepMetric, TaskType
 from .services.exceptions import ImportValidationError
-from .services.folds import parse_fold_name
 from .services.parsing import describe_outputs, detect_task, find_outputs, normalize_test, prepare_outputs
 from .services.tasks import ClassificationTask, RegressionTask, get_task
 
@@ -173,18 +172,6 @@ class AccessAndSearchTests(TestCase):
         self.assertNotContains(response, "Raio-X")
 
 
-class FoldNameTests(SimpleTestCase):
-    def test_reads_group_and_fold_from_the_name(self):
-        self.assertEqual(parse_fold_name("Efficient Net CV1 Fold 5"), ("Efficient Net CV1", 5))
-        self.assertEqual(parse_fold_name("resnet-fold3"), ("resnet", 3))
-        self.assertEqual(parse_fold_name("ResNet_CV2_FOLD_10"), ("ResNet_CV2", 10))
-
-    def test_names_without_a_fold_are_ignored(self):
-        self.assertIsNone(parse_fold_name("Experimento Teste"))
-        self.assertIsNone(parse_fold_name("Fold 2"))
-        self.assertIsNone(parse_fold_name("Manifold 3"))
-
-
 class GroupAndFoldTests(TestCase):
     def setUp(self):
         self.user = create_user("ana")
@@ -197,19 +184,19 @@ class GroupAndFoldTests(TestCase):
             "name": name, "group_name": group, "fold": fold, "step_unit": "epoch",
         })
 
-    def test_group_and_fold_are_filled_from_the_name(self):
+    def test_group_and_fold_left_blank_stay_blank(self):
         response = self.post_experiment("EfficientNet CV1 Fold 2")
         self.assertEqual(response.status_code, 302)
         experiment = Experiment.objects.get(name="EfficientNet CV1 Fold 2")
-        self.assertEqual((experiment.group_name, experiment.fold), ("EfficientNet CV1", 2))
+        self.assertEqual((experiment.group_name, experiment.fold), ("", None))
 
     def test_existing_group_keeps_its_spelling(self):
-        self.post_experiment("EfficientNet CV1 Fold 1")
+        self.post_experiment("Primeiro", group="EfficientNet CV1", fold=1)
         self.post_experiment("Terceiro", group="efficientnet cv1", fold=3)
         self.assertEqual(Experiment.objects.get(name="Terceiro").group_name, "EfficientNet CV1")
 
     def test_same_fold_twice_in_a_group_is_rejected(self):
-        self.post_experiment("EfficientNet CV1 Fold 2")
+        self.post_experiment("Primeiro", group="EfficientNet CV1", fold=2)
         response = self.post_experiment("Outro", group="EfficientNet CV1", fold=2)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Já existe um experimento com o fold 2")

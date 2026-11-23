@@ -22,7 +22,26 @@
 
   <form method="post" class="form form-card">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form.non_field_errors }}
+    {% include "partials/form_field.html" with field=form.name %}
+
+    <fieldset class="form-fieldset">
+      <legend>Validação cruzada <span>(opcional)</span></legend>
+      <p class="fieldset-hint">Agrupe os folds de uma mesma validação cruzada. Um nome como “EfficientNet CV1 Fold 3” já preenche os dois campos.</p>
+      <div class="fieldset-row">
+        <div class="fieldset-grow">
+          {% include "partials/form_field.html" with field=form.group_name %}
+        </div>
+        <div class="fieldset-fold">
+          {% include "partials/form_field.html" with field=form.fold %}
+        </div>
+      </div>
+      <div class="auto-note" data-auto-note hidden>Preenchido a partir do nome. Você pode alterar.</div>
+    </fieldset>
+
+    {% include "partials/form_field.html" with field=form.architecture %}
+    {% include "partials/form_field.html" with field=form.notes %}
+    {% include "partials/form_field.html" with field=form.step_unit %}
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Criar experimento</button>
       <a class="btn btn-ghost" href="{% url 'experiment_list' project.pk %}">Cancelar</a>
@@ -30,4 +49,5 @@
   </form>
   {{ form.group_options|json_script:"group-options" }}
   <script src="{% static 'js/groups.js' %}" defer></script>
+  <script src="{% static 'js/fold_from_name.js' %}" defer></script>
 {% endblock %}

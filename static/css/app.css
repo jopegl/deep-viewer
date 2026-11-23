@@ -853,6 +853,57 @@ code {
   cursor: pointer;
 }
 
+.form-fieldset {
+  margin: 4px 0 22px;
+  padding: 18px 20px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.form-fieldset legend {
+  padding: 0 8px;
+  margin-left: -8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.form-fieldset legend span {
+  color: var(--faint);
+  font-weight: 500;
+}
+
+.form .fieldset-hint {
+  display: block;
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.fieldset-row {
+  display: flex;
+  gap: 14px;
+}
+
+.fieldset-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.fieldset-fold {
+  width: 130px;
+}
+
+.auto-note {
+  margin: -8px 0 14px;
+  color: var(--green);
+  font-size: 13px;
+}
+
+.auto-note[hidden] {
+  display: none;
+}
+
 .form .helptext {
   color: var(--faint);
   font-size: 13px;
@@ -1413,6 +1464,18 @@ code {
 .autocomplete-list li:hover,
 .autocomplete-list li.is-active {
   background: var(--green-soft);
+}
+
+.autocomplete-list li.autocomplete-create span {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.autocomplete-list li.autocomplete-create:not(:first-child) {
+  margin-top: 6px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 6px 6px;
 }
 
 .autocomplete-list .autocomplete-empty {

@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 
 from ..models import Experiment
-from ..services.folds import parse_fold_name
 
 
 class ExperimentForm(forms.ModelForm):
@@ -22,8 +21,8 @@ class ExperimentForm(forms.ModelForm):
             "fold": "Fold",
         }
         help_texts = {
-            "group_name": "Escolha um grupo da lista ou digite um nome novo para criar outro. Experimentos do mesmo grupo aparecem juntos, como os folds de uma validação cruzada.",
-            "fold": "Deixe grupo e fold em branco para preencher pelo nome, como em “EfficientNet CV1 Fold 3”.",
+            "group_name": "Escolha um grupo da lista ou digite um nome novo.",
+            "fold": "Número do fold no grupo.",
         }
         widgets = {
             "group_name": forms.TextInput(attrs={
@@ -66,11 +65,6 @@ class ExperimentForm(forms.ModelForm):
         cleaned = super().clean()
         group = (cleaned.get("group_name") or "").strip()
         fold = cleaned.get("fold")
-
-        if not group and fold is None and cleaned.get("name"):
-            parsed = parse_fold_name(cleaned["name"])
-            if parsed:
-                group, fold = parsed
 
         known = {option["name"].lower(): option["name"] for option in self.group_options}
         group = known.get(group.lower(), group)

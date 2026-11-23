@@ -22,6 +22,7 @@ document.querySelectorAll("[data-group-options]").forEach(function (input) {
   function choose(value) {
     input.value = value;
     input.classList.toggle("is-chosen", value !== "");
+    input.dispatchEvent(new Event("change", {bubbles: true}));
     close();
   }
 
@@ -32,9 +33,10 @@ document.querySelectorAll("[data-group-options]").forEach(function (input) {
     active = index;
   }
 
-  function addItem(value, label, hint) {
+  function addItem(value, label, hint, className) {
     var item = document.createElement("li");
     item.dataset.value = value;
+    if (className) item.className = className;
     var name = document.createElement("span");
     name.textContent = label;
     item.appendChild(name);
@@ -66,7 +68,7 @@ document.querySelectorAll("[data-group-options]").forEach(function (input) {
       addItem(group.name, group.name, hint);
     });
     if (query && !exact) {
-      addItem(query, "Criar grupo “" + query + "”", "Grupo novo");
+      addItem(query, "+ Criar grupo “" + query + "”", "Grupo novo neste projeto", "autocomplete-create");
     }
 
     list.hidden = !list.children.length;

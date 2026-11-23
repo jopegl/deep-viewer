@@ -30,7 +30,7 @@ Developed for the **DCC061 – Software Engineering** course.
   - classification: accuracy, precision, recall, F1, confusion matrix, per-class metrics and misclassified samples
   - regression: MAE, RMSE, R², MRE, true vs. predicted plot and largest errors
 - Experiment cards with a loss preview curve
-- **Groups and folds**: experiments can belong to a group (e.g. the folds of a cross-validation) and have a fold number; the project page shows one section per group with the folds in order, and can filter by group and fold. The group field lists the existing groups (with how many experiments each has) and offers to create a new one, so typos do not split a group. Names like `EfficientNet CV1 Fold 3` fill the group and the fold automatically
+- **Groups and folds**: experiments can belong to a group (e.g. the folds of a cross-validation) and have a fold number; the project page shows one section per group with the folds in order, and can filter by group and fold. The group field lists the existing groups (with how many experiments each has) and offers to create a new one, so typos do not split a group. While typing a name like `EfficientNet CV1 Fold 3`, the form fills the group and the fold on screen, and the user can still change them
 - **Experiment comparison**: ranking of the project's experiments by any test metric (task, metric and output selectable), with a bar chart and the best result highlighted
 - **CSV export**: the metrics of every output and the predictions of each output can be downloaded from the dashboard; the predictions file uses the same columns as the test spreadsheet
 
@@ -291,7 +291,6 @@ deep-viewer/
 │   ├── admin.py
 │   └── services/
 │       ├── exceptions.py        # ImportValidationError
-│       ├── folds.py             # reads the group and the fold from names like "ResNet CV1 Fold 3"
 │       ├── parsing.py           # spreadsheet reading, column recognition and task suggestion
 │       ├── tasks.py             # import strategy of each task (Strategy)
 │       └── importing.py         # saving the data to the database (Facade)
@@ -390,7 +389,7 @@ python manage.py test
 ```
 
 - `analyses/tests.py`: the metrics are checked against hand calculations and against scikit-learn; the analysis strategies and the ranking are tested on their own and with the database; the comparison page is tested for ordering, filters, fallbacks and access control; the CSV exports are tested for their content, file name and access control.
-- `experiments/tests.py`: the import strategies, the spreadsheet parsing, the whole import flow (upload, confirmation screen, saved data), access control between users, the project search, and groups and folds (reading them from the name, duplicate folds, grouped list, and the filter).
+- `experiments/tests.py`: the import strategies, the spreadsheet parsing, the whole import flow (upload, confirmation screen, saved data), access control between users, the project search, and groups and folds (group spelling, duplicate folds, grouped list and the filter).
 
 ---
 
