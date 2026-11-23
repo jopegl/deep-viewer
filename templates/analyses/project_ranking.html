@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Comparar experimentos | {{ project.name }} | Deep Viewer{% endblock %}
+{% block body_class %}{% if request.GET %}is-reload{% endif %}{% endblock %}
+
+{% block content %}
+  <nav class="crumbs" aria-label="Você está em">
+    <a href="{% url 'project_list' %}">Projetos</a>
+    <span>/</span>
+    <a href="{% url 'experiment_list' project.pk %}">{{ project.name }}</a>
+    <span>/</span>
+    <span>Comparar experimentos</span>
+  </nav>
+
+  <div class="page-head">
+    <div>
+      <h1>Comparar experimentos</h1>
+      <p class="lead">Ranking dos experimentos do projeto pelas métricas do conjunto de teste.</p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'experiment_list' project.pk %}">Voltar aos experimentos</a>
+  </div>
+
+  {% if not tasks %}
+    <div class="empty">
+      <h3>Nenhum resultado de teste ainda</h3>
+      <p>Importe as planilhas de teste dos experimentos para compará-los.</p>
+      <a class="btn btn-primary" href="{% url 'experiment_list' project.pk %}">Ver experimentos</a>
+    </div>
+  {% else %}
+    <form method="get" class="inline-form ranking-filters">
+      <div class="filter-pair">
+        <label for="task">Tarefa</label>
+        <select class="select" name="task" id="task" onchange="this.form.submit()">
+          {% for value, label in tasks %}
+            <option value="{{ value }}"{% if value == task %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-pair">
+        <label for="metric">Métrica</label>
+        <select class="select" name="metric" id="metric" onchange="this.form.submit()">
+          {% for column in columns %}
+            <option value="{{ column.key }}"{% if column.selected %} selected{% endif %}>{{ column.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if output_names|length > 1 %}
+        <div class="filter-pair">
+          <label for="output">Saída</label>
+          <select class="select" name="output" id="output" onchange="this.form.submit()">
+            <option value="">Todas</option>
+            {% for name in output_names %}
+              <option value="{{ name }}"{% if name == output_name %} selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+      <noscript><button type="submit" class="btn btn-ghost btn-sm">Comparar</button></noscript>
+    </form>
+
+    {% if rows %}
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>{{ metric_label }}</h2>
+            <p>{% if lower_is_better %}Menor é melhor{% else %}Maior é melhor{% endif %} · {{ rows|length }} resultado{{ rows|length|pluralize }}</p>
+          </div>
+        </div>
+        <div class="chart">{{ chart|safe }}</div>
+      </div>
+
+      <div class="panel">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Experimento</th>
+              {% if show_output %}
+                <th>Saída</th>
+              {% endif %}
+              {% for column in columns %}
+                <th class="num{% if column.selected %} is-selected{% endif %}">{{ column.label }}</th>
+              {% endfor %}
+              <th class="num">Amostras</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr{% if row.position == 1 %} class="is-best"{% endif %}>
+                <td class="rank-pos">{{ row.position }}º</td>
+                <td>
+                  <a href="{% url 'experiment_results' row.experiment.pk %}?output={{ row.output.name|urlencode }}#teste">{{ row.experiment.name }}</a>
+                  {% if row.position == 1 %}
+                    <span class="tag tag-task">Melhor</span>
+                  {% endif %}
+                </td>
+                {% if show_output %}
+                  <td>{{ row.output.name }}</td>
+                {% endif %}
+                {% for cell in row.cells %}
+                  <td class="num{% if cell.selected %} is-selected{% endif %}">
+                    {% if cell.value is not None %}{{ cell.value|floatformat:4 }}{% else %}-{% endif %}
+                  </td>
+                {% endfor %}
+                <td class="num">{{ row.metrics.n_samples }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">
+        <h3>Nenhum experimento tem essa métrica</h3>
+        <p>Escolha outra métrica ou outra saída.</p>
+      </div>
+    {% endif %}
+  {% endif %}
+{% endblock %}

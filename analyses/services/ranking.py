@@ -1,4 +1,4 @@
-from experiments.models import Output
+from experiments.models import Output, TaskType
 
 from .tasks import get_analysis
 
@@ -25,3 +25,13 @@ def rank_experiments(project, task, metric, output_name=None):
     for position, row in enumerate(rows, start=1):
         row["position"] = position
     return rows
+
+
+def ranking_tasks(project):
+    used = set(Output.objects.filter(experiment__project=project).values_list("task", flat=True))
+    return [task for task in TaskType.values if task in used]
+
+
+def ranking_outputs(project, task):
+    names = Output.objects.filter(experiment__project=project, task=task).values_list("name", flat=True)
+    return sorted(set(names))

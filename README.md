@@ -30,10 +30,10 @@ Developed for the **DCC061 – Software Engineering** course.
   - classification: accuracy, precision, recall, F1, confusion matrix, per-class metrics and misclassified samples
   - regression: MAE, RMSE, R², MRE, true vs. predicted plot and largest errors
 - Experiment cards with a loss preview curve
+- **Experiment comparison**: ranking of the project's experiments by any test metric (task, metric and output selectable), with a bar chart and the best result highlighted
 
 **Planned**
 
-- Experiment ranking and comparison screen
 - Detailed validation of the training spreadsheet, reporting the row of each error
 - Support for decimal commas (spreadsheets exported by Excel in Portuguese)
 - PDF report
@@ -107,6 +107,7 @@ Then open http://127.0.0.1:8000/ in your browser. Admin users can reach the admi
 5. If the column names follow the convention below, the system recognizes them on its own. Otherwise, it asks you to indicate what each column means.
 6. For **test** spreadsheets, a confirmation screen lists each output with a suggested task (classification or regression) and a few example values. Check the suggestion, change it if needed and click **Importar**. Training spreadsheets skip this step.
 7. Click **Ver dashboard** to see the curves and metrics. For multi-output experiments, use the **Saída** selector to switch between outputs.
+8. On the project page, click **Comparar experimentos** to rank the experiments by a test metric and find the best model.
 
 ---
 
@@ -383,7 +384,7 @@ Patterns are used only where the code is expected to change; the rest is kept si
 python manage.py test
 ```
 
-- `analyses/tests.py`: the metrics are checked against hand calculations and against scikit-learn; the analysis strategies and the ranking are tested on their own and with the database.
+- `analyses/tests.py`: the metrics are checked against hand calculations and against scikit-learn; the analysis strategies and the ranking are tested on their own and with the database; the comparison page is tested for ordering, filters, fallbacks and access control.
 - `experiments/tests.py`: the import strategies, the spreadsheet parsing, the whole import flow (upload, confirmation screen, saved data), access control between users and the project search.
 
 ---

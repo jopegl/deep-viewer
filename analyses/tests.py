@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 from sklearn import metrics as sk
 
 from experiments.models import Experiment, Output, Project, TaskType
@@ -138,3 +139,53 @@ class AnalysisWithDatabaseTests(TestCase):
         self.create_output("melhor", TaskType.CLASSIF, [("a", "x", "x"), ("b", "x", "x")])
         rows = rank_experiments(self.project, TaskType.CLASSIF, "accuracy")
         self.assertEqual([row["experiment"].name for row in rows], ["melhor", "pior"])
+
+
+class RankingPageTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="bia", email="bia@example.com", password="senha-forte-123"
+        )
+        self.project = Project.objects.create(name="Raízes", analyst=self.user)
+        self.url = reverse("project_ranking", args=[self.project.pk])
+        self.client.force_login(self.user)
+
+    def create_output(self, experiment_name, task, rows, output_name="principal"):
+        experiment, _ = Experiment.objects.get_or_create(project=self.project, name=experiment_name)
+        output = Output.objects.create(experiment=experiment, name=output_name, task=task)
+        strategy = get_task(task)
+        strategy.prediction_model.objects.bulk_create(strategy.build_predictions(output, rows))
+        return output
+
+    def test_project_without_test_results_shows_empty_state(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nenhum resultado de teste ainda")
+
+    def test_ranking_page_lists_best_experiment_first(self):
+        self.create_output("pior", TaskType.REGR, [("a", 1.0, 3.0), ("b", 2.0, 4.0)])
+        self.create_output("melhor", TaskType.REGR, [("a", 1.0, 1.1), ("b", 2.0, 2.1)])
+        response = self.client.get(self.url, {"task": TaskType.REGR, "metric": "mae"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row["experiment"].name for row in response.context["rows"]], ["melhor", "pior"])
+        self.assertContains(response, "Menor é melhor")
+
+    def test_invalid_metric_falls_back_to_the_first_one(self):
+        self.create_output("resnet", TaskType.CLASSIF, [("a", "x", "x")])
+        response = self.client.get(self.url, {"metric": "inexistente"})
+        self.assertEqual(response.context["task"], TaskType.CLASSIF)
+        self.assertEqual(response.context["metric"], "accuracy")
+
+    def test_output_filter_keeps_only_the_chosen_output(self):
+        self.create_output("rede", TaskType.REGR, [("a", 1.0, 1.5)], output_name="altura")
+        self.create_output("rede", TaskType.REGR, [("a", 1.0, 1.2)], output_name="largura")
+        response = self.client.get(self.url, {"task": TaskType.REGR, "metric": "mae", "output": "altura"})
+        self.assertEqual([row["output"].name for row in response.context["rows"]], ["altura"])
+        self.assertFalse(response.context["show_output"])
+
+    def test_other_users_project_returns_404(self):
+        other = get_user_model().objects.create_user(
+            username="caio", email="caio@example.com", password="senha-forte-123"
+        )
+        self.client.force_login(other)
+        self.assertEqual(self.client.get(self.url).status_code, 404)

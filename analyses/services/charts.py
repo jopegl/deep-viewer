@@ -193,3 +193,18 @@ def true_vs_predicted_chart(df):
     ))
     fig.update_layout(title="Real x predito", xaxis_title="Valor real", yaxis_title="Valor predito")
     return _to_html(fig, animate=True)
+
+def ranking_chart(labels, values, metric_label):
+    colors = ["#4cc38a"] + ["#35473f"] * (len(values) - 1)
+    fig = go.Figure(go.Bar(
+        x=values,
+        y=labels,
+        orientation="h",
+        marker_color=colors,
+        text=[f"{value:.4f}" for value in values],
+        textposition="auto",
+        hovertemplate="%{y}: %{x:.4f}<extra></extra>",
+    ))
+    fig.update_layout(xaxis_title=metric_label, height=max(260, 52 * len(labels) + 90), showlegend=False)
+    fig.update_yaxes(autorange="reversed", automargin=True)
+    return _to_html(fig)

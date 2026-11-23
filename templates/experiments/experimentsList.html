@@ -18,7 +18,10 @@
         <p class="lead">{{ project.description }}</p>
       {% endif %}
     </div>
-    <a class="btn btn-primary" href="{% url 'experiment_create' project.pk %}">Novo experimento</a>
+    <div class="form-actions">
+      <a class="btn btn-ghost" href="{% url 'project_ranking' project.pk %}">Comparar experimentos</a>
+      <a class="btn btn-primary" href="{% url 'experiment_create' project.pk %}">Novo experimento</a>
+    </div>
   </div>
 
   {% if total_count %}

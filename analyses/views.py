@@ -1,10 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
-from experiments.models import Experiment
+from experiments.models import Experiment, Project, TaskType
 
-from .services.charts import training_curve, training_metric_names
+from .services.charts import ranking_chart, training_curve, training_metric_names
+from .services.ranking import rank_experiments, ranking_outputs, ranking_tasks
 from .services.tasks import get_analysis
+
+
+def _choose(value, options):
+    return value if value in options else options[0]
 
 
 @login_required
@@ -34,3 +39,54 @@ def experiment_results(request, pk):
         "worst_errors": analysis["worst_errors"] if analysis else [],
         "test_template": analysis["template_name"] if analysis else None,
     })
+
+@login_required
+def project_ranking(request, pk):
+    project = get_object_or_404(Project, pk=pk, analyst=request.user)
+    tasks = ranking_tasks(project)
+    context = {
+        "project": project,
+        "tasks": [(task, TaskType(task).label) for task in tasks],
+    }
+    if not tasks:
+        return render(request, "analyses/project_ranking.html", context)
+
+    task = _choose(request.GET.get("task"), tasks)
+    analysis = get_analysis(task)
+    metric = _choose(request.GET.get("metric"), list(analysis.ranking_metrics))
+
+    output_names = ranking_outputs(project, task)
+    output_name = request.GET.get("output", "")
+    if output_name not in output_names:
+        output_name = ""
+    show_output = not output_name and len(output_names) > 1
+
+    columns = [
+        {"key": key, "label": label, "selected": key == metric}
+        for key, label in analysis.ranking_metrics.items()
+    ]
+    rows = rank_experiments(project, task, metric, output_name or None)
+    for row in rows:
+        name = row["experiment"].name
+        row["label"] = f"{name} · {row['output'].name}" if show_output else name
+        row["cells"] = [
+            {"value": row["metrics"][column["key"]], "selected": column["selected"]}
+            for column in columns
+        ]
+
+    metric_label = analysis.ranking_metrics[metric]
+    context.update({
+        "task": task,
+        "metric": metric,
+        "metric_label": metric_label,
+        "columns": columns,
+        "output_names": output_names,
+        "output_name": output_name,
+        "show_output": show_output,
+        "lower_is_better": metric in analysis.lower_is_better,
+        "rows": rows,
+        "chart": ranking_chart(
+            [row["label"] for row in rows], [row["value"] for row in rows], metric_label
+        ) if rows else None,
+    })
+    return render(request, "analyses/project_ranking.html", context)

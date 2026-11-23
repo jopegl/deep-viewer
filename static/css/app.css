@@ -711,6 +711,37 @@ code {
   font-weight: 600;
 }
 
+.table tr.is-best td {
+  background: var(--green-soft);
+}
+
+.table th.is-selected {
+  color: var(--green);
+}
+
+.table td.is-selected {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rank-pos {
+  width: 48px;
+  color: var(--faint);
+  font-weight: 600;
+}
+
+.ranking-filters {
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-bottom: 24px;
+}
+
+.ranking-filters .filter-pair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* forms */
 
 .form-card {
