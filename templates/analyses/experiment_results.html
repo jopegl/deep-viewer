@@ -31,6 +31,9 @@
       </div>
     </div>
     <div class="form-actions">
+      {% if test_metrics %}
+        <a class="btn btn-ghost" href="{% url 'experiment_export_metrics' experiment.pk %}">Baixar métricas (CSV)</a>
+      {% endif %}
       <a class="btn btn-ghost" href="{% url 'experiment_import' experiment.pk %}">Importar planilhas</a>
       <a class="btn btn-ghost btn-danger-text" href="{% url 'experiment_delete' experiment.pk %}">Excluir</a>
     </div>
@@ -87,22 +90,27 @@
           {% endif %}
         {% endif %}
       </div>
-      {% if outputs|length > 1 %}
-        <form method="get" action="#teste" class="inline-form">
-          <input type="hidden" name="metric" value="{{ selected_metric }}">
-          <label for="output">Saída</label>
-          <select class="select" name="output" id="output" onchange="this.form.submit()">
-            {% for o in outputs %}
-              {% if o == output %}
-                <option value="{{ o.name }}" selected>{{ o.name }} ({{ o.get_task_display|lower }})</option>
-              {% else %}
-                <option value="{{ o.name }}">{{ o.name }} ({{ o.get_task_display|lower }})</option>
-              {% endif %}
-            {% endfor %}
-          </select>
-          <noscript><button type="submit" class="btn btn-ghost btn-sm">Mostrar</button></noscript>
-        </form>
-      {% endif %}
+      <div class="form-actions">
+        {% if outputs|length > 1 %}
+          <form method="get" action="#teste" class="inline-form">
+            <input type="hidden" name="metric" value="{{ selected_metric }}">
+            <label for="output">Saída</label>
+            <select class="select" name="output" id="output" onchange="this.form.submit()">
+              {% for o in outputs %}
+                {% if o == output %}
+                  <option value="{{ o.name }}" selected>{{ o.name }} ({{ o.get_task_display|lower }})</option>
+                {% else %}
+                  <option value="{{ o.name }}">{{ o.name }} ({{ o.get_task_display|lower }})</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            <noscript><button type="submit" class="btn btn-ghost btn-sm">Mostrar</button></noscript>
+          </form>
+        {% endif %}
+        {% if test_metrics %}
+          <a class="btn btn-ghost btn-sm" href="{% url 'experiment_export_predictions' experiment.pk %}?output={{ output.name|urlencode }}">Baixar predições (CSV)</a>
+        {% endif %}
+      </div>
     </div>
 
     {% if test_metrics %}

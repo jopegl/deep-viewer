@@ -1,15 +1,26 @@
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils.text import slugify
 
-from experiments.models import Experiment, Project, TaskType
+from experiments.models import Experiment, Output, Project, TaskType
 
 from .services.charts import ranking_chart, training_curve, training_metric_names
+from .services.export import write_metrics, write_predictions
 from .services.ranking import rank_experiments, ranking_outputs, ranking_tasks
 from .services.tasks import get_analysis
 
 
 def _choose(value, options):
     return value if value in options else options[0]
+
+
+def _csv_response(*name_parts):
+    filename = "_".join(slugify(part) or "arquivo" for part in name_parts) + ".csv"
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response.write("\ufeff")
+    return response
 
 
 @login_required
@@ -90,3 +101,20 @@ def project_ranking(request, pk):
         ) if rows else None,
     })
     return render(request, "analyses/project_ranking.html", context)
+
+
+@login_required
+def export_metrics(request, pk):
+    experiment = get_object_or_404(Experiment, pk=pk, project__analyst=request.user)
+    response = _csv_response(experiment.name, "metricas")
+    write_metrics(experiment, response)
+    return response
+
+
+@login_required
+def export_predictions(request, pk):
+    experiment = get_object_or_404(Experiment, pk=pk, project__analyst=request.user)
+    output = get_object_or_404(Output, experiment=experiment, name=request.GET.get("output", ""))
+    response = _csv_response(experiment.name, output.name, "predicoes")
+    write_predictions(output, response)
+    return response

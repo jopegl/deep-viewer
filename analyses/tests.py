@@ -189,3 +189,53 @@ class RankingPageTests(TestCase):
         )
         self.client.force_login(other)
         self.assertEqual(self.client.get(self.url).status_code, 404)
+
+
+class ExportTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="davi", email="davi@example.com", password="senha-forte-123"
+        )
+        project = Project.objects.create(name="Sementes", analyst=self.user)
+        self.experiment = Experiment.objects.create(project=project, name="Rede Folhas")
+        self.client.force_login(self.user)
+
+    def create_output(self, name, task, rows):
+        output = Output.objects.create(experiment=self.experiment, name=name, task=task)
+        strategy = get_task(task)
+        strategy.prediction_model.objects.bulk_create(strategy.build_predictions(output, rows))
+        return output
+
+    def read_csv(self, response):
+        return response.content.decode("utf-8-sig").splitlines()
+
+    def test_metrics_csv_lists_every_output(self):
+        self.create_output("altura", TaskType.REGR, [("a", 1.0, 1.5), ("b", 2.0, 2.5)])
+        self.create_output("doenca", TaskType.CLASSIF, [("a", "x", "x"), ("b", "x", "y")])
+        response = self.client.get(reverse("experiment_export_metrics", args=[self.experiment.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertIn('filename="rede-folhas_metricas.csv"', response["Content-Disposition"])
+        lines = self.read_csv(response)
+        self.assertEqual(lines[0], "output,task,metric,value")
+        self.assertIn("altura,Regression,mae,0.5", lines)
+        self.assertIn("doenca,Classification,accuracy,0.5", lines)
+        self.assertIn("doenca,Classification,n_samples,2", lines)
+
+    def test_predictions_csv_uses_the_test_spreadsheet_format(self):
+        self.create_output("doenca", TaskType.CLASSIF, [("a", "x", "x"), ("b", "x", "y")])
+        url = reverse("experiment_export_predictions", args=[self.experiment.pk])
+        lines = self.read_csv(self.client.get(url, {"output": "doenca"}))
+        self.assertEqual(lines, ["sample_id,true_label,predicted_label", "a,x,x", "b,x,y"])
+
+    def test_predictions_of_unknown_output_return_404(self):
+        url = reverse("experiment_export_predictions", args=[self.experiment.pk])
+        self.assertEqual(self.client.get(url, {"output": "nao-existe"}).status_code, 404)
+
+    def test_other_users_experiment_returns_404(self):
+        other = get_user_model().objects.create_user(
+            username="eva", email="eva@example.com", password="senha-forte-123"
+        )
+        self.client.force_login(other)
+        url = reverse("experiment_export_metrics", args=[self.experiment.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)

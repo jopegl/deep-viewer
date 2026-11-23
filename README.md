@@ -31,6 +31,7 @@ Developed for the **DCC061 – Software Engineering** course.
   - regression: MAE, RMSE, R², MRE, true vs. predicted plot and largest errors
 - Experiment cards with a loss preview curve
 - **Experiment comparison**: ranking of the project's experiments by any test metric (task, metric and output selectable), with a bar chart and the best result highlighted
+- **CSV export**: the metrics of every output and the predictions of each output can be downloaded from the dashboard; the predictions file uses the same columns as the test spreadsheet
 
 **Planned**
 
@@ -107,7 +108,8 @@ Then open http://127.0.0.1:8000/ in your browser. Admin users can reach the admi
 5. If the column names follow the convention below, the system recognizes them on its own. Otherwise, it asks you to indicate what each column means.
 6. For **test** spreadsheets, a confirmation screen lists each output with a suggested task (classification or regression) and a few example values. Check the suggestion, change it if needed and click **Importar**. Training spreadsheets skip this step.
 7. Click **Ver dashboard** to see the curves and metrics. For multi-output experiments, use the **Saída** selector to switch between outputs.
-8. On the project page, click **Comparar experimentos** to rank the experiments by a test metric and find the best model.
+8. On the dashboard, use **Baixar métricas (CSV)** and **Baixar predições (CSV)** to take the results to a spreadsheet or a paper.
+9. On the project page, click **Comparar experimentos** to rank the experiments by a test metric and find the best model.
 
 ---
 
@@ -295,6 +297,7 @@ deep-viewer/
 │   ├── services/
 │   │   ├── metrics.py           # classification and regression metrics
 │   │   ├── tasks.py             # analysis strategy of each task (Strategy)
+│   │   ├── export.py            # CSV export
 │   │   ├── ranking.py           # output ranking
 │   │   └── charts.py            # Plotly charts
 │   ├── templatetags/            # loss preview curve on the experiment cards
@@ -384,7 +387,7 @@ Patterns are used only where the code is expected to change; the rest is kept si
 python manage.py test
 ```
 
-- `analyses/tests.py`: the metrics are checked against hand calculations and against scikit-learn; the analysis strategies and the ranking are tested on their own and with the database; the comparison page is tested for ordering, filters, fallbacks and access control.
+- `analyses/tests.py`: the metrics are checked against hand calculations and against scikit-learn; the analysis strategies and the ranking are tested on their own and with the database; the comparison page is tested for ordering, filters, fallbacks and access control; the CSV exports are tested for their content, file name and access control.
 - `experiments/tests.py`: the import strategies, the spreadsheet parsing, the whole import flow (upload, confirmation screen, saved data), access control between users and the project search.
 
 ---
